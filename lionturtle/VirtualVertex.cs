@@ -19,8 +19,12 @@ namespace lionturtle
             }
         }
 
-		public void Constrain(int? newMin, int? newMax)
+		public bool Constrain(int? newMin, int? newMax)
 		{
+			bool changed;
+			int? initMin = min;
+			int? initMax = max;
+
 			if ( (newMin != null && newMax != null && newMin > newMax)
 			||   (newMin != null && max != null && newMin > max)
 			||   (newMax != null && min != null && newMax < min)
@@ -34,6 +38,9 @@ namespace lionturtle
 
 			if (max == null) max = newMax;
             else if (newMax != null && newMax < max) max = newMax;
+
+			changed = (min != initMin || max != initMax);
+			return changed;
 		}
 
         public int Resolve(int heuristic)
@@ -89,7 +96,7 @@ namespace lionturtle
 				}
 				else
 				{
-					resolvedValue = (int)min;
+					resolvedValue = (int)max;
 					return resolvedValue;
 				}
 			}

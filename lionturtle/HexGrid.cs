@@ -5,13 +5,17 @@ namespace lionturtle
 {
 	public class HexGrid
 	{
+		public Dictionary<AxialPosition, VirtualVertex> VirtualVertices;
 		public Dictionary<AxialPosition, Vertex> Vertices;
 		public Dictionary<AxialPosition, Hex> Hexes;
+		public Queue<AxialPosition> PropagationQueue;
 
 		public HexGrid()
 		{
+			VirtualVertices = new();
 			Vertices = new();
 			Hexes = new();
+			PropagationQueue = new();
 		}
 
 		public Vertex? FindExistingVertexForHexV(AxialPosition hexPosition, int vIndex)
@@ -60,62 +64,205 @@ namespace lionturtle
             Hexes[position] = newHex;
         }
 
+		public VirtualVertex GetOrCreateVirtualVertex(AxialPosition position)
+		{
+			if (VirtualVertices.ContainsKey(position))
+			{
+				return VirtualVertices[position];
+			}
+			else
+			{
+				VirtualVertex vv = new(position, null, null);
+				VirtualVertices[position] = vv;
+				return vv;
+			}
+				
+        }
+
 		public Vertex ResolveVertexAtPosition(AxialPosition position, int heuristic)
 		{
-            Dictionary<AxialPosition, VirtualVertex> localConstraints = DetermineLocalConstraints(position);
-			VirtualVertex blurryVertex = GridUtilities.GetBlurryVertex(position, localConstraints);
+			VirtualVertex blurryVertex = GetOrCreateVirtualVertex(position);
 			int height = blurryVertex.Resolve(heuristic);
 			Vertex newVert = new(position, height);
             Vertices[position] = newVert;
-			return newVert;
+			PropagationQueue.Enqueue(position);
+			while(PropagationQueue.Count > 0)
+			{
+				PropagateConstraints(PropagationQueue.Dequeue());
+            }
+            return newVert;
         }
 
-        public Dictionary<AxialPosition, VirtualVertex> DetermineLocalConstraints(AxialPosition vertexPosition)
+		public void PropagateConstraints(AxialPosition position)
 		{
-			Dictionary<AxialPosition, VirtualVertex> localConstraints = new();
+			VertexGroup[] vGroups = GridUtilities.GetVertexGroups(position);
 
-			(AxialPosition, AxialPosition)[] localVertexPositionPairs = GridUtilities.GetLocalVertexPositionPairs(vertexPosition);
-			//For each pair of local vertex positions
-			for(int i = 0; i < localVertexPositionPairs.Length; i++)
+			VirtualVertex primaryV = VirtualVertices[position];
+
+			AxialPosition[] longSpokes = new AxialPosition[]
 			{
-				AxialPosition vertexAPosition = vertexPosition + localVertexPositionPairs[i].Item1;
-				AxialPosition vertexBPosition = vertexPosition + localVertexPositionPairs[i].Item2;
+				new AxialPosition(6, 0),
+				new AxialPosition(6, -6),
+				new AxialPosition(0, -6),
+				new AxialPosition(-6, 0),
+				new AxialPosition(-6, 6),
+				new AxialPosition(0, 6),
+			};
 
-				Vertex? vertexA = FindExistingVertex(vertexAPosition);
-				Vertex? vertexB = FindExistingVertex(vertexBPosition);
+			AxialPosition[] shortSpokes = new AxialPosition[]
+			{
+				new AxialPosition(3, 0),
+				new AxialPosition(3, -3),
+				new AxialPosition(0, -3),
+				new AxialPosition(-3, 0),
+				new AxialPosition(-3, 3),
+				new AxialPosition(0, 3),
+			};
 
-				//If both vertices exist
-				if(vertexA != null && vertexB != null)
+            for (int i = 0; i < 6; i++)
+			{
+				if (VirtualVertices.ContainsKey(position + longSpokes[i]))
 				{
-					//Get the constraints they generate
-					VirtualVertex[] newConstraints = GridUtilities.GetConstraintsCausedByVertexPair(vertexA, vertexB);
+					VirtualVertex secondaryV = VirtualVertices[position + longSpokes[i]];
+					AxialPosition squeezedVPosition = shortSpokes[i];
+					VirtualVertex squeezedV = GetOrCreateVirtualVertex(position + squeezedVPosition);
 
-					//And Apply them to Virtual Vertices so far
-					for(int j = 0; j < newConstraints.Length; j++)
-					{
-						if (!localConstraints.ContainsKey(newConstraints[j].position))
-						{
-							localConstraints[newConstraints[j].position] = newConstraints[j];
-						}
-						else
-						{
-							VirtualVertex existingConstraint = localConstraints[newConstraints[j].position];
-							VirtualVertex newConstraint = newConstraints[j];
-							existingConstraint.Constrain(newConstraint.min, newConstraint.max);
-						}
-					}
+					int? lowerMin = primaryV.min;
+					if (secondaryV.min == null) lowerMin = null;
+					else if (secondaryV.min < primaryV.min) lowerMin = secondaryV.min;
+
+					int? higherMax = primaryV.max;
+					if (secondaryV.max == null) higherMax = null;
+					else if (secondaryV.max > primaryV.max) higherMax = secondaryV.max;
+
+					int? oldMin = squeezedV.min;
+					int? oldMax = squeezedV.max;
+
+					squeezedV.Constrain(lowerMin, higherMax);
+
+					if (squeezedV.min != oldMin || squeezedV.max != oldMax) PropagationQueue.Enqueue(squeezedV.position);
 				}
+            }
 
-				//If a vertex is already resolved, the min and max of its virtual should be its height
-				//Room for optimization, since I may be doing this for every pair
-				if(vertexA != null)
-					localConstraints[vertexAPosition] = new VirtualVertex(vertexAPosition, vertexA.height, vertexA.height);
-				if(vertexB != null)
-					localConstraints[vertexBPosition] = new VirtualVertex(vertexBPosition, vertexB.height, vertexB.height);
 
+            for (int i = 0; i < vGroups.Length; i++)
+			{
+				AxialPosition secondaryVPosition = position + vGroups[i].SecondaryVertex;
+				if (VirtualVertices.ContainsKey(secondaryVPosition))
+				{
+					VirtualVertex secondaryV = VirtualVertices[secondaryVPosition];
+
+					//squeezed vertex if this is a long group
+					if (vGroups[i].SqueezedVertex != null)
+					{
+						AxialPosition squeezedVPosition = vGroups[i].SqueezedVertex?? new AxialPosition(0, 0); //Hack, TODO: Handle this possibly null value instead of worthless default
+						VirtualVertex squeezedV = GetOrCreateVirtualVertex(position + squeezedVPosition);
+
+						int? lowerMin = primaryV.min;
+						if (secondaryV.min == null) lowerMin = null;
+						else if (secondaryV.min < primaryV.min) lowerMin = secondaryV.min;
+
+                        int? higherMax = primaryV.max;
+                        if (secondaryV.max == null) higherMax = null;
+                        else if (secondaryV.max > primaryV.max) higherMax = secondaryV.max;
+
+						int? oldMin = squeezedV.min;
+						int? oldMax = squeezedV.max;
+
+						squeezedV.Constrain(lowerMin, higherMax);
+
+						if (squeezedV.min != oldMin || squeezedV.max != oldMax) PropagationQueue.Enqueue(squeezedV.position);
+					}
+
+					//primary is lower than secondary
+					if(primaryV.max < secondaryV.min)
+					{
+                        AxialPosition[] primaryAffectedPositions = vGroups[i].PrimaryAffected;
+                        AxialPosition[] secondaryAffectedPositions = vGroups[i].SecondaryAffected;
+
+                        for (int j = 0; j < primaryAffectedPositions.Length; j++)
+                        {
+                            VirtualVertex vv = GetOrCreateVirtualVertex(position + primaryAffectedPositions[j]);
+
+                            int? oldMin = vv.min;
+                            int? oldMax = vv.max;
+
+                            vv.Constrain(null, primaryV.max);
+
+                            if (vv.min != oldMin || vv.max != oldMax) PropagationQueue.Enqueue(vv.position);
+                        }
+
+                        for (int j = 0; j < secondaryAffectedPositions.Length; j++)
+						{
+							VirtualVertex vv = GetOrCreateVirtualVertex(position + secondaryAffectedPositions[j]);
+
+                            int? oldMin = vv.min;
+                            int? oldMax = vv.max;
+
+                            vv.Constrain(secondaryV.min, null);
+
+                            if (vv.min != oldMin || vv.max != oldMax) PropagationQueue.Enqueue(vv.position);
+                        }
+                    }
+
+					//primary is higher than secondary
+                    if (primaryV.min > secondaryV.max)
+                    {
+                        AxialPosition[] primaryAffectedPositions = vGroups[i].PrimaryAffected;
+                        AxialPosition[] secondaryAffectedPositions = vGroups[i].SecondaryAffected;
+
+                        for (int j = 0; j < primaryAffectedPositions.Length; j++)
+                        {
+                            VirtualVertex vv = GetOrCreateVirtualVertex(position + primaryAffectedPositions[j]);
+
+                            int? oldMin = vv.min;
+                            int? oldMax = vv.max;
+
+                            vv.Constrain(primaryV.min, null);
+
+                            if (vv.min != oldMin || vv.max != oldMax) PropagationQueue.Enqueue(vv.position);
+                        }
+
+                        for (int j = 0; j < secondaryAffectedPositions.Length; j++)
+                        {
+                            VirtualVertex vv = GetOrCreateVirtualVertex(position + secondaryAffectedPositions[j]);
+
+                            int? oldMin = vv.min;
+                            int? oldMax = vv.max;
+
+                            vv.Constrain(null, secondaryV.max);
+
+                            if (vv.min != oldMin || vv.max != oldMax) PropagationQueue.Enqueue(vv.position);
+                        }
+                    }
+                }
 			}
-
-			return localConstraints;
 		}
+
+		public string GetStringHexes()
+		{
+            string stringHexes = "hexes = {";
+            foreach (KeyValuePair<AxialPosition, Hex> pair in Hexes)
+            {
+                AxialPosition position = pair.Key;
+                Hex hex = pair.Value;
+
+                string stringHex = $"HexPosition({position.Q}, {position.R}): Hex([";
+
+                for (int j = 0; j < hex.Verts.Length; j++)
+                {
+                    if (j < hex.Verts.Length - 1)
+                        stringHex += $"{hex.Verts[j].height}, ";
+                    else
+                        stringHex += $"{hex.Verts[j].height}])";
+                }
+
+                stringHexes += stringHex;
+                stringHexes += ", ";
+            }
+            stringHexes += "}";
+
+			return stringHexes;
+        }
     }
 }

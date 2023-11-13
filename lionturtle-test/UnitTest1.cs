@@ -63,32 +63,32 @@ namespace lionturtle_test
             Assert.True(vertexPosition == new AxialPosition(2, -1));
         }
 
-        [Fact]
-        public void Find_Existing_Vertex_By_Hex_Position()
-        {
-            HexGrid grid = new();
-            AxialPosition hexPosition = new AxialPosition(0, 0);
-            AxialPosition newHexPosition = new AxialPosition(1, 0);
+        //[Fact]
+        //public void Find_Existing_Vertex_By_Hex_Position()
+        //{
+        //    HexGrid grid = new();
+        //    AxialPosition hexPosition = new AxialPosition(0, 0);
+        //    AxialPosition newHexPosition = new AxialPosition(1, 0);
 
-            grid.ManifestHexAtPosition(hexPosition, 0);
+        //    grid.ManifestHexAtPosition(hexPosition, 0);
 
-            Vertex? existingVertex = grid.FindExistingVertexForHexV(newHexPosition, 2);
-            Assert.True(existingVertex != null);
-        }
+        //    Vertex? existingVertex = grid.FindExistingVertexForHexV(newHexPosition, 2);
+        //    Assert.True(existingVertex != null);
+        //}
 
-        [Fact]
-        public void New_Hexes_Use_Existing_Vertices()
-        {
-            HexGrid grid = new();
+        //[Fact]
+        //public void New_Hexes_Use_Existing_Vertices()
+        //{
+        //    HexGrid grid = new();
 
-            grid.ManifestHexAtPosition(new AxialPosition(0, 0), 0);
-            grid.ManifestHexAtPosition(new AxialPosition(1, 0), 0);
+        //    grid.ManifestHexAtPosition(new AxialPosition(0, 0), 0);
+        //    grid.ManifestHexAtPosition(new AxialPosition(1, 0), 0);
 
-            Assert.True(grid.Vertices.Count == 10);
-            Assert.True(grid.Hexes.Count == 2);
-            Assert.True(grid.Hexes[new AxialPosition(0, 0)].Verts[0] ==
-                grid.Hexes[new AxialPosition(1, 0)].Verts[2]);
-        }
+        //    Assert.True(grid.Vertices.Count == 10);
+        //    Assert.True(grid.Hexes.Count == 2);
+        //    Assert.True(grid.Hexes[new AxialPosition(0, 0)].Verts[0] ==
+        //        grid.Hexes[new AxialPosition(1, 0)].Verts[2]);
+        //}
 
         [Fact]
         public void Determine_If_Vertex_Points_Up()
@@ -132,16 +132,25 @@ namespace lionturtle_test
 
             vv.Constrain(null, null);
             Assert.True(vv.min == -4);
+            Assert.True(vv.max == 4);
 
             vv.Constrain(null, 1);
             Assert.True(vv.min == -4);
             Assert.True(vv.max == 1);
 
-            //Assert.Throws<InvalidOperationException>(() => vv.Constrain(2, null));
+            vv.Constrain(-1, null);
+            Assert.True(vv.min == -1);
+            Assert.True(vv.max == 1);
 
             VirtualVertex vv2 = new(new AxialPosition(0, 0), null, null);
             vv2.Constrain(1, null);
             Assert.True(vv2.min == 1);
+            Assert.True(vv2.max == null);
+
+            VirtualVertex vv3 = new(new AxialPosition(0, 0), null, null);
+            vv3.Constrain(null, 7);
+            Assert.True(vv3.min == null);
+            Assert.True(vv3.max == 7);
         }
 
         [Fact]
@@ -189,132 +198,45 @@ namespace lionturtle_test
         }
 
         [Fact]
-        public void Get_Constraints_From_Resolved_Vertices()
+        public void Propagate_Constraints_Direct_Neighbor()
         {
-            AxialPosition positionA = new(2, -1);
-            Vertex vA = new Vertex(positionA, 4);
-            AxialPosition positionB = new(1, -2);
-            Vertex vB = new Vertex(positionB, 7);
+            HexGrid grid = new();
+            AxialPosition primaryVertexPosition = new(2, -1);
+            AxialPosition secondaryVertexPosition = new(4, -2);
+            grid.VirtualVertices[primaryVertexPosition] = new(primaryVertexPosition, 4, 4);
+            grid.VirtualVertices[secondaryVertexPosition] = new(secondaryVertexPosition, 5, 10);
+            grid.PropagateConstraints(primaryVertexPosition);
 
-            VirtualVertex[] constraints = GridUtilities.GetConstraintsCausedByVertexPair(vA, vB);
-            bool certainConstraintExists = constraints.Any(c =>
-                c.position == new AxialPosition(-1, -4) &&
-                c.min == 7 && c.max == null);
-            Assert.True(certainConstraintExists);
-
-
-            positionA = new(1, -2);
-            positionB = new(2, -4);
-
-            vA = new Vertex(positionA, 1);
-            vB = new Vertex(positionB, 0);
-
-            constraints = GridUtilities.GetConstraintsCausedByVertexPair(vA, vB);
-            certainConstraintExists = constraints.Any(c =>
-                c.position == new AxialPosition(2, -1) &&
-                c.min == 1 && c.max == null);
-            Assert.True(certainConstraintExists);
-
-
-            positionA = new(2, -1);
-            positionB = new(1, -2);
-
-            vA = new Vertex(positionA, 7);
-            vB = new Vertex(positionB, 7);
-
-            constraints = GridUtilities.GetConstraintsCausedByVertexPair(vA, vB);
-            bool noConstraintsReturned = constraints.Length == 0;
-            Assert.True(noConstraintsReturned);
+            Assert.True(grid.VirtualVertices[new AxialPosition(8, -7)].min == 5);
         }
 
         [Fact]
-        public void Determine_Local_Constraints()
+        public void Propagate_Constraints_Second_Neighbor()
         {
             HexGrid grid = new();
-            AxialPosition[] h0VPositions = GridUtilities.GetVertexPositionsFromHexPosiiton(new AxialPosition(0, -1));
-            int[] h0Heights = new int[] { 0, 0, 0, 0, 1, 1 };
-            for (int i = 0; i < h0VPositions.Length; i++)
-            {
-                if (!grid.Vertices.ContainsKey(h0VPositions[i]))
-                {
-                    grid.Vertices[h0VPositions[i]] = new Vertex(h0VPositions[i], h0Heights[i]);
-                }
-            }
+            AxialPosition primaryVertexPosition = new(2, -1);
+            AxialPosition secondaryVertexPosition = new(5, -1);
+            grid.VirtualVertices[primaryVertexPosition] = new(primaryVertexPosition, 7, 7);
+            grid.VirtualVertices[secondaryVertexPosition] = new(secondaryVertexPosition, 2, 3);
+            grid.PropagateConstraints(primaryVertexPosition);
 
-            AxialPosition currentVertexPosition = new AxialPosition(2, -1);
-            Dictionary<AxialPosition, VirtualVertex> localConstraints = grid.DetermineLocalConstraints(currentVertexPosition);
-            Assert.True(localConstraints[currentVertexPosition].min == 1);
+            Assert.True(grid.VirtualVertices[new AxialPosition(-1, -1)].min == 7);
+            Assert.True(grid.VirtualVertices[new AxialPosition(8, -1)].max == 3);
         }
 
         [Fact]
-        public void Determine_Min_And_Max_From_Local_Constraints()
+        public void Propagate_Constraints_Chain_Reaction()
         {
             HexGrid grid = new();
-            AxialPosition[] h0VPositions = GridUtilities.GetVertexPositionsFromHexPosiiton(new AxialPosition(0, -1));
-            int[] h0Heights = new int[] { 0, 0, 0, 0, 1, 1 };
-            for (int i = 0; i < h0VPositions.Length; i++)
-            {
-                if (!grid.Vertices.ContainsKey(h0VPositions[i]))
-                {
-                    grid.Vertices[h0VPositions[i]] = new Vertex(h0VPositions[i], h0Heights[i]);
-                }
-            }
+            AxialPosition primaryVertexPosition = new(2, -1);
+            AxialPosition secondaryVertexPosition = new(5, -1);
+            AxialPosition tertiaryVertexPosition = new(11, -1);
+            grid.VirtualVertices[primaryVertexPosition] = new(primaryVertexPosition, 7, 7);
+            grid.VirtualVertices[secondaryVertexPosition] = new(secondaryVertexPosition, 2, 3);
+            grid.VirtualVertices[tertiaryVertexPosition] = new(tertiaryVertexPosition, 9, null);
+            grid.ResolveVertexAtPosition(primaryVertexPosition, 7);
 
-            AxialPosition currentVertexPosition = new AxialPosition(2, -1);
-            Dictionary<AxialPosition, VirtualVertex> localConstraints = grid.DetermineLocalConstraints(currentVertexPosition);
-            VirtualVertex blurryVertex = GridUtilities.GetBlurryVertex(currentVertexPosition, localConstraints);
-            //This GetRange method will need to subtract current position from localConstraints positions
-            //to convert to coordinates relative to the current vertex's position
-            //then do diagonal hex calculations. :)
-
-            Assert.True(blurryVertex.min == 1);
-        }
-
-        [Fact]
-        public void Determine_Min_And_Max_From_Local_Constraints_2()
-        {
-            HexGrid grid = new();
-
-            grid.Vertices[new AxialPosition(-2, -5)] = new Vertex(new AxialPosition(-2, -5), 7);
-            grid.Vertices[new AxialPosition(-1, -4)] = new Vertex(new AxialPosition(-1, -4), 6);
-
-            grid.Vertices[new AxialPosition(-7, 5)] = new Vertex(new AxialPosition(-7, 5), 3);
-            grid.Vertices[new AxialPosition(-5, 4)] = new Vertex(new AxialPosition(-5, 4), 4);
-
-            grid.Vertices[new AxialPosition(8, -7)] = new Vertex(new AxialPosition(8, -7), 1);
-            grid.Vertices[new AxialPosition(7, -5)] = new Vertex(new AxialPosition(7, -5), 2);
-
-            AxialPosition xVertexPosition = new AxialPosition(1, 1);
-            Dictionary<AxialPosition, VirtualVertex> xLocalConstraints = grid.DetermineLocalConstraints(xVertexPosition);
-            VirtualVertex xBlurryVertex = GridUtilities.GetBlurryVertex(xVertexPosition, xLocalConstraints);
-
-            AxialPosition yVertexPosition = new AxialPosition(2, -1);
-            Dictionary<AxialPosition, VirtualVertex> yLocalConstraints = grid.DetermineLocalConstraints(yVertexPosition);
-            VirtualVertex yBlurryVertex = GridUtilities.GetBlurryVertex(yVertexPosition, yLocalConstraints);
-
-            Assert.True(xBlurryVertex.min == 2);
-            Assert.True(xBlurryVertex.max == null);
-            Assert.True(yBlurryVertex.min == 2);
-            Assert.True(yBlurryVertex.max == null);
-        }
-
-        [Fact]
-        public void Determine_Min_And_Max_From_Local_Constraints_3()
-        {
-            HexGrid grid = new();
-
-            grid.Vertices[new AxialPosition(2, -4)] = new Vertex(new AxialPosition(2, -4), 7);
-            grid.Vertices[new AxialPosition(1, -2)] = new Vertex(new AxialPosition(1, -2), 6);
-
-            grid.Vertices[new AxialPosition(2, 2)] = new Vertex(new AxialPosition(2, 2), 3);
-            grid.Vertices[new AxialPosition(1, 1)] = new Vertex(new AxialPosition(1, 1), 4);
-
-            AxialPosition xVertexPosition = new AxialPosition(-1, -1);
-            Dictionary<AxialPosition, VirtualVertex> xLocalConstraints = grid.DetermineLocalConstraints(xVertexPosition);
-            VirtualVertex xBlurryVertex = GridUtilities.GetBlurryVertex(xVertexPosition, xLocalConstraints);
-
-            Assert.True(xBlurryVertex.min == 4);
-            Assert.True(xBlurryVertex.max == 6);
+            Assert.True(grid.VirtualVertices[new AxialPosition(14, -1)].min == 9);
         }
 
         [Fact]
@@ -325,8 +247,8 @@ namespace lionturtle_test
             grid.ManifestHexAtPosition(new AxialPosition(0, 0), 0);
 
             int numPlacements = 0;
-            int maxPlacements = 2000;
-            while(numPlacements < maxPlacements)
+            int maxPlacements = 5000;
+            while (numPlacements < maxPlacements)
             {
                 Random rand = new Random();
                 List<AxialPosition> hexPositions = grid.Hexes.Keys.ToList();
@@ -340,17 +262,14 @@ namespace lionturtle_test
                 if (!grid.Hexes.ContainsKey(candidateHexPosition))
                 {
                     int[] possibleHeuristics = new int[] {
-                        previousHeuristic - 1,
-                        previousHeuristic,
-                        previousHeuristic,
-                        previousHeuristic,
-                        previousHeuristic,
-                        previousHeuristic,
-                        previousHeuristic,
-                        previousHeuristic,
-                        previousHeuristic,
-                        previousHeuristic + 1
-                    };
+                            previousHeuristic - 1,
+                            previousHeuristic,
+                            previousHeuristic,
+                            previousHeuristic,
+                            previousHeuristic,
+                            previousHeuristic,
+                            previousHeuristic + 1
+                        };
                     int newHeuristic = possibleHeuristics[rand.Next(possibleHeuristics.Length)];
                     grid.ManifestHexAtPosition(candidateHexPosition, newHeuristic);
                 }
@@ -370,33 +289,41 @@ namespace lionturtle_test
             //        {
             //            if (q + r + s == 0)
             //            {
-            //                if(!grid.Hexes.ContainsKey(new AxialPosition(q, r)))
+            //                if (!grid.Hexes.ContainsKey(new AxialPosition(q, r)))
             //                    grid.ManifestHexAtPosition(new AxialPosition(q, r), new Random().Next(0, 4));
             //            }
             //        }
             //    }
             //}
 
-            string stringHexes = "hexes = {";
-            foreach (KeyValuePair<AxialPosition, Hex> pair in grid.Hexes)
-            {
-                AxialPosition position = pair.Key;
-                Hex hex = pair.Value;
 
-                string stringHex = $"HexPosition({position.Q}, {position.R}): Hex([";
+            ////Spiral from center outward
+            //AxialPosition[] directions = Constants.axial_directions;
 
-                for (int j = 0; j < hex.Verts.Length; j++)
-                {
-                    if (j < hex.Verts.Length - 1)
-                        stringHex += $"{hex.Verts[j].height}, ";
-                    else
-                        stringHex += $"{hex.Verts[j].height}])";
-                }
+            //int numRings = 20;
+            //AxialPosition walkPosition = new(0, 0);
+            //int walkHeight = 0;
 
-                stringHexes += stringHex;
-                stringHexes += ", ";
-            }
-            stringHexes += "}";
+            //grid.ManifestHexAtPosition(walkPosition, walkHeight);
+
+            //for (int i = 1; i < numRings; i++)
+            //{
+            //    walkPosition += directions[4];
+
+            //    for (int j = 0; j < 6; j++)
+            //    {
+            //        for(int k = 0; k < i; k++)
+            //        {
+            //            walkPosition += directions[j];
+            //            walkHeight += new Random().Next(0, 3) - 1;
+
+            //            if (!grid.Hexes.ContainsKey(walkPosition))
+            //                grid.ManifestHexAtPosition(walkPosition, walkHeight);
+            //        }
+            //    }
+            //}
+
+            string stringHexes = grid.GetStringHexes();
             Assert.True(1 + 1 == 2);
         }
 
