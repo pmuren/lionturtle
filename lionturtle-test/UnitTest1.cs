@@ -244,38 +244,38 @@ namespace lionturtle_test
         {
             HexGrid grid = new();
 
-            grid.ManifestHexAtPosition(new AxialPosition(0, 0), 0);
+            //grid.ManifestHexAtPosition(new AxialPosition(0, 0), 0);
 
-            int numPlacements = 0;
-            int maxPlacements = 5000;
-            while (numPlacements < maxPlacements)
-            {
-                Random rand = new Random();
-                List<AxialPosition> hexPositions = grid.Hexes.Keys.ToList();
-                AxialPosition randomHexPosition = hexPositions[rand.Next(hexPositions.Count)];
-                int previousHeuristic = grid.Hexes[randomHexPosition].heuristic;
+            //int numPlacements = 0;
+            //int maxPlacements = 25000;
+            //while (numPlacements < maxPlacements)
+            //{
+            //    Random rand = new Random();
+            //    List<AxialPosition> hexPositions = grid.Hexes.Keys.ToList();
+            //    AxialPosition randomHexPosition = hexPositions[rand.Next(hexPositions.Count)];
+            //    int previousHeuristic = grid.Hexes[randomHexPosition].heuristic;
 
-                AxialPosition[] directions = Constants.axial_directions;
-                AxialPosition randomDirection = directions[rand.Next(directions.Length)];
+            //    AxialPosition[] directions = Constants.axial_directions;
+            //    AxialPosition randomDirection = directions[rand.Next(directions.Length)];
 
-                AxialPosition candidateHexPosition = randomHexPosition + randomDirection;
-                if (!grid.Hexes.ContainsKey(candidateHexPosition))
-                {
-                    int[] possibleHeuristics = new int[] {
-                            previousHeuristic - 1,
-                            previousHeuristic,
-                            previousHeuristic,
-                            previousHeuristic,
-                            previousHeuristic,
-                            previousHeuristic,
-                            previousHeuristic + 1
-                        };
-                    int newHeuristic = possibleHeuristics[rand.Next(possibleHeuristics.Length)];
-                    grid.ManifestHexAtPosition(candidateHexPosition, newHeuristic);
-                }
+            //    AxialPosition candidateHexPosition = randomHexPosition + randomDirection;
+            //    if (!grid.Hexes.ContainsKey(candidateHexPosition))
+            //    {
+            //        int[] possibleHeuristics = new int[] {
+            //                previousHeuristic - 1,
+            //                previousHeuristic,
+            //                previousHeuristic,
+            //                previousHeuristic,
+            //                previousHeuristic,
+            //                previousHeuristic,
+            //                previousHeuristic + 1
+            //            };
+            //        int newHeuristic = possibleHeuristics[rand.Next(possibleHeuristics.Length)];
+            //        grid.ManifestHexAtPosition(candidateHexPosition, newHeuristic);
+            //    }
 
-                numPlacements++;
-            }
+            //    numPlacements++;
+            //}
 
             //int numRings = 20;
             //int lowIndex = -1 * numRings + 1;
@@ -297,31 +297,79 @@ namespace lionturtle_test
             //}
 
 
-            ////Spiral from center outward
-            //AxialPosition[] directions = Constants.axial_directions;
+            //Spiral from center outward
+            AxialPosition[] directions = Constants.axial_directions;
 
-            //int numRings = 20;
-            //AxialPosition walkPosition = new(0, 0);
-            //int walkHeight = 0;
+            int numRings = 50;
+            AxialPosition walkPosition = new(0, 0);
+            int walkHeight = 0;
 
-            //grid.ManifestHexAtPosition(walkPosition, walkHeight);
+            grid.ManifestHexAtPosition(walkPosition, walkHeight);
 
-            //for (int i = 1; i < numRings; i++)
-            //{
-            //    walkPosition += directions[4];
+            for (int i = 1; i < numRings; i++)
+            {
+                walkPosition += directions[4];
 
-            //    for (int j = 0; j < 6; j++)
-            //    {
-            //        for(int k = 0; k < i; k++)
-            //        {
-            //            walkPosition += directions[j];
-            //            walkHeight += new Random().Next(0, 3) - 1;
+                for (int j = 0; j < 6; j++)
+                {
+                    for (int k = 0; k < i; k++)
+                    {
+                        walkPosition += directions[j];
 
-            //            if (!grid.Hexes.ContainsKey(walkPosition))
-            //                grid.ManifestHexAtPosition(walkPosition, walkHeight);
-            //        }
-            //    }
-            //}
+                        Dictionary<AxialPosition, Hex> nearbyHexes = new();
+                        for(int n = 0; n < 6; n++)
+                        {
+                            if(grid.Hexes.ContainsKey(walkPosition + directions[n]))
+                            {
+                                nearbyHexes[walkPosition + directions[n]] = grid.Hexes[walkPosition + directions[n]];
+                            }
+
+                            for(int nn = 0; nn < 6; nn++)
+                            {
+                                if(grid.Hexes.ContainsKey(walkPosition + directions[n] + directions[nn]))
+                                {
+                                    nearbyHexes[walkPosition + directions[n] + directions[nn]] = grid.Hexes[walkPosition + directions[n] + directions[nn]];
+                                }
+                            }
+                        }
+
+                        HashSet<Vertex> nearbyVertices = new();
+                        foreach(AxialPosition key in nearbyHexes.Keys)
+                        {
+                            for(int m = 0; m < 6; m++)
+                            {
+                                nearbyVertices.Add(nearbyHexes[key].Verts[m]);
+                            }
+                        }
+
+                        int averageHeight = walkHeight;
+                        if(nearbyVertices.Count != 0)
+                        {
+                            int sum = 0;
+                            foreach(Vertex v in nearbyVertices)
+                            {
+                                sum += v.height;
+                            }
+                            averageHeight = sum / nearbyVertices.Count;
+                        }
+
+                        walkHeight = averageHeight;
+                        if(new Random().Next(0, 5) > 3)
+                        {
+                            walkHeight += new Random().Next(0, 3) - 1;
+                        }
+
+                        if (new Random().Next(0, 5) > 3)
+                        {
+                            walkHeight += new Random().Next(0, 3) - 1;
+                        }
+
+
+                        if (!grid.Hexes.ContainsKey(walkPosition))
+                            grid.ManifestHexAtPosition(walkPosition, walkHeight);
+                    }
+                }
+            }
 
             string stringHexes = grid.GetStringHexes();
             Assert.True(1 + 1 == 2);
