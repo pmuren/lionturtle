@@ -93,6 +93,19 @@ namespace lionturtle
             return newVert;
         }
 
+		public void ConstrainAndPropagate(VirtualVertex vv, int? newMin, int? newMax)
+		{
+            int? oldMin = vv.min;
+            int? oldMax = vv.max;
+
+            vv.Constrain(newMin, newMax);
+
+            if (vv.min != oldMin || vv.max != oldMax)
+			{
+				PropagationQueue.Enqueue(vv.position);
+			}
+        }
+
 		public void PropagateConstraints(AxialPosition position)
 		{
 			VertexGroup[] vGroups = GridUtilities.GetVertexGroups(position);
@@ -135,12 +148,7 @@ namespace lionturtle
 					if (secondaryV.max == null) higherMax = null;
 					else if (secondaryV.max > primaryV.max) higherMax = secondaryV.max;
 
-					int? oldMin = squeezedV.min;
-					int? oldMax = squeezedV.max;
-
-					squeezedV.Constrain(lowerMin, higherMax);
-
-					if (squeezedV.min != oldMin || squeezedV.max != oldMax) PropagationQueue.Enqueue(squeezedV.position);
+					ConstrainAndPropagate(squeezedV, lowerMin, higherMax);
 				}
             }
 
@@ -152,87 +160,42 @@ namespace lionturtle
 				{
 					VirtualVertex secondaryV = VirtualVertices[secondaryVPosition];
 
-					//squeezed vertex if this is a long group
-					if (vGroups[i].SqueezedVertex != null)
-					{
-						AxialPosition squeezedVPosition = vGroups[i].SqueezedVertex?? new AxialPosition(0, 0); //Hack, TODO: Handle this possibly null value instead of worthless default
-						VirtualVertex squeezedV = GetOrCreateVirtualVertex(position + squeezedVPosition);
-
-						int? lowerMin = primaryV.min;
-						if (secondaryV.min == null) lowerMin = null;
-						else if (secondaryV.min < primaryV.min) lowerMin = secondaryV.min;
-
-                        int? higherMax = primaryV.max;
-                        if (secondaryV.max == null) higherMax = null;
-                        else if (secondaryV.max > primaryV.max) higherMax = secondaryV.max;
-
-						int? oldMin = squeezedV.min;
-						int? oldMax = squeezedV.max;
-
-						squeezedV.Constrain(lowerMin, higherMax);
-
-						if (squeezedV.min != oldMin || squeezedV.max != oldMax) PropagationQueue.Enqueue(squeezedV.position);
-					}
-
 					//primary is lower than secondary
 					if(primaryV.max < secondaryV.min)
 					{
-                        AxialPosition[] primaryAffectedPositions = vGroups[i].PrimaryAffected;
-                        AxialPosition[] secondaryAffectedPositions = vGroups[i].SecondaryAffected;
+                        AxialPosition[] primaryAffectedPositions = vGroups[i].PrimaryPushedVertices;
+                        AxialPosition[] secondaryAffectedPositions = vGroups[i].SecondaryPushedVertices;
 
                         for (int j = 0; j < primaryAffectedPositions.Length; j++)
                         {
                             VirtualVertex vv = GetOrCreateVirtualVertex(position + primaryAffectedPositions[j]);
-
-                            int? oldMin = vv.min;
-                            int? oldMax = vv.max;
-
-                            vv.Constrain(null, primaryV.max);
-
-                            if (vv.min != oldMin || vv.max != oldMax) PropagationQueue.Enqueue(vv.position);
+                            ConstrainAndPropagate(vv, null, primaryV.max);
                         }
 
                         for (int j = 0; j < secondaryAffectedPositions.Length; j++)
 						{
 							VirtualVertex vv = GetOrCreateVirtualVertex(position + secondaryAffectedPositions[j]);
-
-                            int? oldMin = vv.min;
-                            int? oldMax = vv.max;
-
-                            vv.Constrain(secondaryV.min, null);
-
-                            if (vv.min != oldMin || vv.max != oldMax) PropagationQueue.Enqueue(vv.position);
+                            ConstrainAndPropagate(vv, secondaryV.min, null);
                         }
                     }
 
 					//primary is higher than secondary
                     if (primaryV.min > secondaryV.max)
                     {
-                        AxialPosition[] primaryAffectedPositions = vGroups[i].PrimaryAffected;
-                        AxialPosition[] secondaryAffectedPositions = vGroups[i].SecondaryAffected;
+                        AxialPosition[] primaryAffectedPositions = vGroups[i].PrimaryPushedVertices;
+                        AxialPosition[] secondaryAffectedPositions = vGroups[i].SecondaryPushedVertices;
 
                         for (int j = 0; j < primaryAffectedPositions.Length; j++)
                         {
                             VirtualVertex vv = GetOrCreateVirtualVertex(position + primaryAffectedPositions[j]);
 
-                            int? oldMin = vv.min;
-                            int? oldMax = vv.max;
-
-                            vv.Constrain(primaryV.min, null);
-
-                            if (vv.min != oldMin || vv.max != oldMax) PropagationQueue.Enqueue(vv.position);
+                            ConstrainAndPropagate(vv, primaryV.min, null);
                         }
 
                         for (int j = 0; j < secondaryAffectedPositions.Length; j++)
                         {
                             VirtualVertex vv = GetOrCreateVirtualVertex(position + secondaryAffectedPositions[j]);
-
-                            int? oldMin = vv.min;
-                            int? oldMax = vv.max;
-
-                            vv.Constrain(null, secondaryV.max);
-
-                            if (vv.min != oldMin || vv.max != oldMax) PropagationQueue.Enqueue(vv.position);
+                            ConstrainAndPropagate(vv, null, secondaryV.max);
                         }
                     }
                 }

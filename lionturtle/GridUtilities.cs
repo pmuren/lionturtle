@@ -8,7 +8,7 @@ namespace lionturtle
         public static bool VertexPointsUp(AxialPosition vertexPosition)
         {
             if (vertexPosition.Q.Mod(3) == 0)
-                throw new InvalidOperationException($"{vertexPosition.Q}.Mod(3) should not be 0.");
+                throw new InvalidOperationException($"{vertexPosition.Q}.Mod(3) should never be 0.");
 
             else if (vertexPosition.Q.Mod(3) == 1) return true;
             else if (vertexPosition.Q.Mod(3) == 2) return false;
@@ -40,59 +40,6 @@ namespace lionturtle
             return hexPosition + n0Position + n1Position;
         }
 
-        public static VirtualVertex[] GetConstraintsCausedByVertexPair(Vertex vertexA, Vertex vertexB)
-        {
-            if (vertexA.height == vertexB.height) return Array.Empty<VirtualVertex>();
-
-            VirtualVertex[] constraints = new VirtualVertex[12];
-
-            AxialPosition directionBA = vertexA.position - vertexB.position;
-            AxialPosition hexAPosition3 = vertexA.position + directionBA;
-            AxialPosition hexAPosition = new(hexAPosition3.Q / 3, hexAPosition3.R / 3);
-            AxialPosition[] hexAVertexPositions = GetVertexPositionsFromHexPosiiton(hexAPosition);
-
-            AxialPosition directionAB = vertexB.position - vertexA.position;
-            AxialPosition hexBPosition3 = vertexB.position + directionAB;
-            AxialPosition hexBPosition = new(hexBPosition3.Q / 3, hexBPosition3.R / 3);
-            AxialPosition[] hexBVertexPositions = GetVertexPositionsFromHexPosiiton(hexBPosition);
-
-            if (vertexA.height < vertexB.height)
-            {
-                for (int i = 0; i < hexAVertexPositions.Length; i++)
-                {
-                    AxialPosition vPosition = hexAVertexPositions[i];
-                    int maxHeight = vertexA.height;
-                    constraints[i] = new VirtualVertex(vPosition, null, maxHeight);
-                }
-
-                for (int i = 0; i < hexBVertexPositions.Length; i++)
-                {
-                    AxialPosition vPosition = hexBVertexPositions[i];
-                    int minHeight = vertexB.height;
-                    constraints[i + 6] = new VirtualVertex(vPosition, minHeight, null);
-                }
-            }
-            else if (vertexA.height > vertexB.height)
-            {
-                for (int i = 0; i < hexAVertexPositions.Length; i++)
-                {
-                    AxialPosition vPosition = hexAVertexPositions[i];
-                    int minHeight = vertexA.height;
-                    constraints[i] = new VirtualVertex(vPosition, minHeight, null);
-                }
-
-                for (int i = 0; i < hexBVertexPositions.Length; i++)
-                {
-                    AxialPosition vPosition = hexBVertexPositions[i];
-                    int maxHeight = vertexB.height;
-                    constraints[i + 6] = new VirtualVertex(vPosition, null, maxHeight);
-                }
-            }
-
-            return constraints;
-        }
-
-
         public static VertexGroup[] GetVertexGroups(AxialPosition primaryVertexPosition)
         {
             if (VertexPointsUp(primaryVertexPosition))
@@ -103,69 +50,57 @@ namespace lionturtle
                     new VertexGroup(
                         primaryVertex: new AxialPosition(0, 0),
                         secondaryVertex: new AxialPosition(1, -2),
-                        primaryAffected: new AxialPosition[]{
+                        primaryPushedVertices: new AxialPosition[]{
                             new AxialPosition(-2, 1),
                             new AxialPosition(1, 1),
                             new AxialPosition(-3, 3),
                             new AxialPosition(0, 3),
-                            new AxialPosition(-5, 4),
                             new AxialPosition(-2, 4),
-                            new AxialPosition(1, 4)
                         },
-                        secondaryAffected: new AxialPosition[] {
+                        secondaryPushedVertices: new AxialPosition[] {
                             new AxialPosition(3, -3),
                             new AxialPosition(0, -3),
                             new AxialPosition(4, -5),
                             new AxialPosition(1, -5),
-                            new AxialPosition(6, -6),
                             new AxialPosition(3, -6),
-                            new AxialPosition(0, -6)
                         }
                     ),
                     new VertexGroup(
                         primaryVertex: new AxialPosition(0, 0),
                         secondaryVertex: new AxialPosition(-2, 1),
-                        primaryAffected: new AxialPosition[]{
+                        primaryPushedVertices: new AxialPosition[]{
                             new AxialPosition(1, 1),
                             new AxialPosition(1, -2),
                             new AxialPosition(3, 0),
                             new AxialPosition(3, -3),
-                            new AxialPosition(4, 1),
                             new AxialPosition(4, -2),
-                            new AxialPosition(4, -5),
                         },
-                        secondaryAffected: new AxialPosition[]{
+                        secondaryPushedVertices: new AxialPosition[]{
                             new AxialPosition(-3, 0),
                             new AxialPosition(-3, 3),
                             new AxialPosition(-5, 1),
                             new AxialPosition(-5, 4),
-                            new AxialPosition(-6, 0),
                             new AxialPosition(-6, 3),
-                            new AxialPosition(-6, 6)
                         }
                     ),
                     new VertexGroup(
                         primaryVertex: new AxialPosition(0, 0),
                         secondaryVertex: new AxialPosition(1, 1),
-                        primaryAffected: new AxialPosition[]
+                        primaryPushedVertices: new AxialPosition[]
                         {
                             new AxialPosition(1, -2),
                             new AxialPosition(-2, 1),
                             new AxialPosition(0, -3),
                             new AxialPosition(-3, 0),
-                            new AxialPosition(1, -5),
                             new AxialPosition(-2, -2),
-                            new AxialPosition(-5, 1)
                         },
-                        secondaryAffected: new AxialPosition[]
+                        secondaryPushedVertices: new AxialPosition[]
                         {
                             new AxialPosition(0, 3),
                             new AxialPosition(3, 0),
                             new AxialPosition(1, 4),
                             new AxialPosition(4, 1),
-                            new AxialPosition(0, 6),
                             new AxialPosition(3, 3),
-                            new AxialPosition(6, 0)
                         }
                     ),
 
@@ -173,48 +108,184 @@ namespace lionturtle
                     new VertexGroup(
                         primaryVertex: new AxialPosition(0, 0),
                         secondaryVertex: new AxialPosition(3, 0),
-                        squeezedVertex: new AxialPosition(1, 1),
-                        primaryAffected: new AxialPosition[]{new AxialPosition(-2, 1), new AxialPosition(-3, 0) },
-                        secondaryAffected: new AxialPosition[]{new AxialPosition(4, 1), new AxialPosition(6, 0) }
+                        pinchedVertices: new AxialPosition[]{new AxialPosition(1, 1) },
+                        primaryPushedVertices: new AxialPosition[]{new AxialPosition(-2, 1)},
+                        secondaryPushedVertices: new AxialPosition[]{new AxialPosition(4, 1)}
                     ),
                     new VertexGroup(
                         primaryVertex: new AxialPosition(0, 0),
                         secondaryVertex: new AxialPosition(3, -3),
-                        squeezedVertex: new AxialPosition(1, -2),
-                        primaryAffected: new AxialPosition[]{new AxialPosition(-2, 1), new AxialPosition(-3, 3) },
-                        secondaryAffected: new AxialPosition[]{new AxialPosition(4, -5), new AxialPosition(6, -6) }
+                        pinchedVertices: new AxialPosition[]{new AxialPosition(1, -2)},
+                        primaryPushedVertices: new AxialPosition[]{new AxialPosition(-2, 1)},
+                        secondaryPushedVertices: new AxialPosition[]{new AxialPosition(4, -5)}
                     ),
                     new VertexGroup(
                         primaryVertex: new AxialPosition(0, 0),
                         secondaryVertex: new AxialPosition(0, -3),
-                        squeezedVertex: new AxialPosition(1, -2),
-                        primaryAffected: new AxialPosition[]{new AxialPosition(1, 1), new AxialPosition(0, 3) },
-                        secondaryAffected: new AxialPosition[]{new AxialPosition(1, -5), new AxialPosition(0, -6) }
+                        pinchedVertices: new AxialPosition[]{new AxialPosition(1, -2)},
+                        primaryPushedVertices: new AxialPosition[]{new AxialPosition(1, 1)},
+                        secondaryPushedVertices: new AxialPosition[]{new AxialPosition(1, -5)}
                     ),
                     new VertexGroup(
                         primaryVertex: new AxialPosition(0, 0),
                         secondaryVertex: new AxialPosition(-3, 0),
-                        squeezedVertex: new AxialPosition(-2, 1),
-                        primaryAffected: new AxialPosition[]{new AxialPosition(1, 1), new AxialPosition(3, 0) },
-                        secondaryAffected: new AxialPosition[]{new AxialPosition(-5, 1), new AxialPosition(-6, 0) }
+                        pinchedVertices: new AxialPosition[]{new AxialPosition(-2, 1)},
+                        primaryPushedVertices: new AxialPosition[]{new AxialPosition(1, 1)},
+                        secondaryPushedVertices: new AxialPosition[]{new AxialPosition(-5, 1)}
                     ),
                     new VertexGroup(
                         primaryVertex: new AxialPosition(0, 0),
                         secondaryVertex: new AxialPosition(-3, 3),
-                        squeezedVertex: new AxialPosition(-2, 1),
-                        primaryAffected: new AxialPosition[]{new AxialPosition(1, -2), new AxialPosition(3, -3) },
-                        secondaryAffected: new AxialPosition[]{new AxialPosition(-5, 4), new AxialPosition(-6, 6) }
+                        pinchedVertices: new AxialPosition[]{new AxialPosition(-2, 1)},
+                        primaryPushedVertices: new AxialPosition[]{new AxialPosition(1, -2)},
+                        secondaryPushedVertices: new AxialPosition[]{new AxialPosition(-5, 4)}
                     ),
                     new VertexGroup(
                         primaryVertex: new AxialPosition(0, 0),
                         secondaryVertex: new AxialPosition(0, 3),
-                        squeezedVertex: new AxialPosition(1, 1),
-                        primaryAffected: new AxialPosition[]{new AxialPosition(1, -2), new AxialPosition(0, -3) },
-                        secondaryAffected: new AxialPosition[]{new AxialPosition(1, 4), new AxialPosition(0, 6) }
-                    )
+                        pinchedVertices: new AxialPosition[]{new AxialPosition(1, 1)},
+                        primaryPushedVertices: new AxialPosition[]{new AxialPosition(1, -2)},
+                        secondaryPushedVertices: new AxialPosition[]{new AxialPosition(1, 4)}
+                    ),
+
+                    //Third Neighbor Groups
+                    //ZigZag type 3rd neighbors
+                    new VertexGroup(
+                        primaryVertex: new AxialPosition(0, 0),
+                        secondaryVertex: new AxialPosition(4, -5),
+                        pinchedVertices: new AxialPosition[]{
+                            new AxialPosition(1, -2),
+                            new AxialPosition(3, -3)
+                        }
+                    ),
+                    new VertexGroup(
+                        primaryVertex: new AxialPosition(0, 0),
+                        secondaryVertex: new AxialPosition(1, -5),
+                        pinchedVertices: new AxialPosition[]{
+                            new AxialPosition(1, -2),
+                            new AxialPosition(0, -3)
+                        }
+                    ),
+                    new VertexGroup(
+                        primaryVertex: new AxialPosition(0, 0),
+                        secondaryVertex: new AxialPosition(-5, 1),
+                        pinchedVertices: new AxialPosition[]{
+                            new AxialPosition(-2, 1),
+                            new AxialPosition(-3, 0)
+                        }
+                    ),
+                    new VertexGroup(
+                        primaryVertex: new AxialPosition(0, 0),
+                        secondaryVertex: new AxialPosition(-5, 4),
+                        pinchedVertices: new AxialPosition[]{
+                            new AxialPosition(-2, 1),
+                            new AxialPosition(-3, 3)
+                        }
+                    ),
+                    new VertexGroup(
+                        primaryVertex: new AxialPosition(0, 0),
+                        secondaryVertex: new AxialPosition(1, 4),
+                        pinchedVertices: new AxialPosition[]{
+                            new AxialPosition(1, 1),
+                            new AxialPosition(0, 3)
+                        }
+                    ),
+                    new VertexGroup(
+                        primaryVertex: new AxialPosition(0, 0),
+                        secondaryVertex: new AxialPosition(4, 1),
+                        pinchedVertices: new AxialPosition[]{
+                            new AxialPosition(1, 1),
+                            new AxialPosition(3, 0)
+                        }
+                    ),
+
+                    //Tip type 3rd neighbors
+                    new VertexGroup(
+                        primaryVertex: new AxialPosition(0, 0),
+                        secondaryVertex: new AxialPosition(4, -2),
+                        primaryPushedVertices: new AxialPosition[]
+                        {
+                            new AxialPosition(-2, 1)
+                        },
+                        secondaryPushedVertices: new AxialPosition[]
+                        {
+                            new AxialPosition(6, -3)
+                        }
+                    ),
+                    new VertexGroup(
+                        primaryVertex: new AxialPosition(0, 0),
+                        secondaryVertex: new AxialPosition(-2, -2),
+                        primaryPushedVertices: new AxialPosition[]
+                        {
+                            new AxialPosition(1, 1)
+                        },
+                        secondaryPushedVertices: new AxialPosition[]
+                        {
+                            new AxialPosition(-3, -3)
+                        }
+                    ),
+                    new VertexGroup(
+                        primaryVertex: new AxialPosition(0, 0),
+                        secondaryVertex: new AxialPosition(-2, 4),
+                        primaryPushedVertices: new AxialPosition[]
+                        {
+                            new AxialPosition(1, -2)
+                        },
+                        secondaryPushedVertices: new AxialPosition[]
+                        {
+                            new AxialPosition(-3, 6)
+                        }
+                    ),
+
+                    //Fourth Neighbor Groups
+                    //Balloon type 4th neighbors
+                    new VertexGroup(
+                        primaryVertex: new AxialPosition(0, 0),
+                        secondaryVertex: new AxialPosition(6, -3),
+                        pinchedVertices: new AxialPosition[]{
+                            new AxialPosition(4, -2),
+                        }
+                    ),
+                    new VertexGroup(
+                        primaryVertex: new AxialPosition(0, 0),
+                        secondaryVertex: new AxialPosition(-3, -3),
+                        pinchedVertices: new AxialPosition[]{
+                            new AxialPosition(-2, -2),
+                        }
+                    ),
+                    new VertexGroup(
+                        primaryVertex: new AxialPosition(0, 0),
+                        secondaryVertex: new AxialPosition(-3, 6),
+                        pinchedVertices: new AxialPosition[]{
+                            new AxialPosition(-2, 4),
+                        }
+                    ),
+
+                    //Stem type 4th neighbors
+                    new VertexGroup(
+                        primaryVertex: new AxialPosition(0, 0),
+                        secondaryVertex: new AxialPosition(3, -6),
+                        pinchedVertices: new AxialPosition[]{
+                            new AxialPosition(1, -2),
+                        }
+                    ),
+                    new VertexGroup(
+                        primaryVertex: new AxialPosition(0, 0),
+                        secondaryVertex: new AxialPosition(-6, 3),
+                        pinchedVertices: new AxialPosition[]{
+                            new AxialPosition(-2, 1),
+                        }
+                    ),
+                    new VertexGroup(
+                        primaryVertex: new AxialPosition(0, 0),
+                        secondaryVertex: new AxialPosition(3, 3),
+                        pinchedVertices: new AxialPosition[]{
+                            new AxialPosition(1, 1),
+                        }
+                    ),
                 };
             }
-            else
+            else //vertex points down
             {
                 return new VertexGroup[]
                 {
@@ -222,73 +293,61 @@ namespace lionturtle
                     new VertexGroup(
                         primaryVertex: new AxialPosition(0, 0),
                         secondaryVertex: new AxialPosition(2, -1),
-                        primaryAffected: new AxialPosition[]
+                        primaryPushedVertices: new AxialPosition[]
                         {
                             new AxialPosition(-1, -1),
                             new AxialPosition(-1, 2),
                             new AxialPosition(-3, 0),
                             new AxialPosition(-3, 3),
-                            new AxialPosition(-4, -1),
                             new AxialPosition(-4, 2),
-                            new AxialPosition(-4, 5)
                         },
-                        secondaryAffected: new AxialPosition[]
+                        secondaryPushedVertices: new AxialPosition[]
                         {
                             new AxialPosition(3, 0),
                             new AxialPosition(3, -3),
                             new AxialPosition(5, -1),
                             new AxialPosition(5, -4),
-                            new AxialPosition(6, 0),
                             new AxialPosition(6, -3),
-                            new AxialPosition(6, -6)
                         }
                     ),
                     new VertexGroup(
                         primaryVertex: new AxialPosition(0, 0),
                         secondaryVertex: new AxialPosition(-1, -1),
-                        primaryAffected: new AxialPosition[]
+                        primaryPushedVertices: new AxialPosition[]
                         {
                             new AxialPosition(-1, 2),
                             new AxialPosition(2, -1),
                             new AxialPosition(0, 3),
                             new AxialPosition(3, 0),
-                            new AxialPosition(-1, 5),
                             new AxialPosition(2, 2),
-                            new AxialPosition(5, -1)
                         },
-                        secondaryAffected: new AxialPosition[]
+                        secondaryPushedVertices: new AxialPosition[]
                         {
                             new AxialPosition(0, -3),
                             new AxialPosition(-3, 0),
                             new AxialPosition(-1, -4),
                             new AxialPosition(-4, -1),
-                            new AxialPosition(0, -6),
                             new AxialPosition(-3, -3),
-                            new AxialPosition(-6, 0)
                         }
                     ),
                     new VertexGroup(
                         primaryVertex: new AxialPosition(0, 0),
                         secondaryVertex: new AxialPosition(-1, 2),
-                        primaryAffected: new AxialPosition[]
+                        primaryPushedVertices: new AxialPosition[]
                         {
                             new AxialPosition(2, -1),
                             new AxialPosition(-1, -1),
                             new AxialPosition(3, -3),
                             new AxialPosition(0, -3),
-                            new AxialPosition(5, -4),
                             new AxialPosition(2, -4),
-                            new AxialPosition(-1, -4)
                         },
-                        secondaryAffected: new AxialPosition[]
+                        secondaryPushedVertices: new AxialPosition[]
                         {
                             new AxialPosition(-3, 3),
                             new AxialPosition(0, 3),
                             new AxialPosition(-4, 5),
                             new AxialPosition(-1, 5),
-                            new AxialPosition(-6, 6),
                             new AxialPosition(-3, 6),
-                            new AxialPosition(0, 6)
                         }
                     ),
 
@@ -296,44 +355,180 @@ namespace lionturtle
                     new VertexGroup(
                         primaryVertex: new AxialPosition(0, 0),
                         secondaryVertex: new AxialPosition(3, 0),
-                        squeezedVertex: new AxialPosition(2, -1),
-                        primaryAffected: new AxialPosition[]{new AxialPosition(-1, -1), new AxialPosition(-3, 0) },
-                        secondaryAffected: new AxialPosition[]{new AxialPosition(5, -1), new AxialPosition(6, 0) }
+                        pinchedVertices: new AxialPosition[]{new AxialPosition(2, -1) },
+                        primaryPushedVertices: new AxialPosition[]{new AxialPosition(-1, -1)},
+                        secondaryPushedVertices: new AxialPosition[]{new AxialPosition(5, -1)}
                     ),
                     new VertexGroup(
                         primaryVertex: new AxialPosition(0, 0),
                         secondaryVertex: new AxialPosition(3, -3),
-                        squeezedVertex: new AxialPosition(2, -1),
-                        primaryAffected: new AxialPosition[]{new AxialPosition(-1, 2), new AxialPosition(-3, 3) },
-                        secondaryAffected: new AxialPosition[]{new AxialPosition(5, -4), new AxialPosition(6, -6) }
+                        pinchedVertices: new AxialPosition[]{new AxialPosition(2, -1)},
+                        primaryPushedVertices: new AxialPosition[]{new AxialPosition(-1, 2)},
+                        secondaryPushedVertices: new AxialPosition[]{new AxialPosition(5, -4)}
                     ),
                     new VertexGroup(
                         primaryVertex: new AxialPosition(0, 0),
                         secondaryVertex: new AxialPosition(0, -3),
-                        squeezedVertex: new AxialPosition(-1, -1),
-                        primaryAffected: new AxialPosition[]{new AxialPosition(-1, 2), new AxialPosition(0, 3) },
-                        secondaryAffected: new AxialPosition[]{new AxialPosition(-1, -4), new AxialPosition(0, -6) }
+                        pinchedVertices: new AxialPosition[]{new AxialPosition(-1, -1)},
+                        primaryPushedVertices: new AxialPosition[]{new AxialPosition(-1, 2)},
+                        secondaryPushedVertices: new AxialPosition[]{new AxialPosition(-1, -4)}
                     ),
                     new VertexGroup(
                         primaryVertex: new AxialPosition(0, 0),
                         secondaryVertex: new AxialPosition(-3, 0),
-                        squeezedVertex: new AxialPosition(-1, -1),
-                        primaryAffected: new AxialPosition[]{new AxialPosition(2, -1), new AxialPosition(3, 0) },
-                        secondaryAffected: new AxialPosition[]{new AxialPosition(-4, -1), new AxialPosition(-6, 0) }
+                        pinchedVertices: new AxialPosition[]{new AxialPosition(-1, -1)},
+                        primaryPushedVertices: new AxialPosition[]{new AxialPosition(2, -1)},
+                        secondaryPushedVertices: new AxialPosition[]{new AxialPosition(-4, -1)}
                     ),
                     new VertexGroup(
                         primaryVertex: new AxialPosition(0, 0),
                         secondaryVertex: new AxialPosition(-3, 3),
-                        squeezedVertex: new AxialPosition(-1, 2),
-                        primaryAffected: new AxialPosition[]{new AxialPosition(2, -1), new AxialPosition(3, -3) },
-                        secondaryAffected: new AxialPosition[]{new AxialPosition(-4, 5), new AxialPosition(-6, 6) }
+                        pinchedVertices: new AxialPosition[]{new AxialPosition(-1, 2)},
+                        primaryPushedVertices: new AxialPosition[]{new AxialPosition(2, -1)},
+                        secondaryPushedVertices: new AxialPosition[]{new AxialPosition(-4, 5)}
                     ),
                     new VertexGroup(
                         primaryVertex: new AxialPosition(0, 0),
                         secondaryVertex: new AxialPosition(0, 3),
-                        squeezedVertex: new AxialPosition(-1, 2),
-                        primaryAffected: new AxialPosition[]{new AxialPosition(-1, -1), new AxialPosition(0, -3) },
-                        secondaryAffected: new AxialPosition[]{new AxialPosition(-1, 5), new AxialPosition(0, 6) }
+                        pinchedVertices: new AxialPosition[]{new AxialPosition(-1, 2)},
+                        primaryPushedVertices: new AxialPosition[]{new AxialPosition(-1, -1)},
+                        secondaryPushedVertices: new AxialPosition[]{new AxialPosition(-1, 5)}
+                    ),
+
+                    //Third Neighbor Groups
+                    //ZigZag type 3rd neighbors
+                    new VertexGroup(
+                        primaryVertex: new AxialPosition(0, 0),
+                        secondaryVertex: new AxialPosition(5, -1),
+                        pinchedVertices: new AxialPosition[]{
+                            new AxialPosition(2, -1),
+                            new AxialPosition(3, 0)
+                        }
+                    ),
+                    new VertexGroup(
+                        primaryVertex: new AxialPosition(0, 0),
+                        secondaryVertex: new AxialPosition(5, -4),
+                        pinchedVertices: new AxialPosition[]{
+                            new AxialPosition(2, -1),
+                            new AxialPosition(3, -3)
+                        }
+                    ),
+                    new VertexGroup(
+                        primaryVertex: new AxialPosition(0, 0),
+                        secondaryVertex: new AxialPosition(-1, -4),
+                        pinchedVertices: new AxialPosition[]{
+                            new AxialPosition(-1, -1),
+                            new AxialPosition(0, -3)
+                        }
+                    ),
+                    new VertexGroup(
+                        primaryVertex: new AxialPosition(0, 0),
+                        secondaryVertex: new AxialPosition(-4, -1),
+                        pinchedVertices: new AxialPosition[]{
+                            new AxialPosition(-1, -1),
+                            new AxialPosition(-3, 0)
+                        }
+                    ),
+                    new VertexGroup(
+                        primaryVertex: new AxialPosition(0, 0),
+                        secondaryVertex: new AxialPosition(-4, 5),
+                        pinchedVertices: new AxialPosition[]{
+                            new AxialPosition(-1, 2),
+                            new AxialPosition(-3, 3)
+                        }
+                    ),
+                    new VertexGroup(
+                        primaryVertex: new AxialPosition(0, 0),
+                        secondaryVertex: new AxialPosition(-1, 5),
+                        pinchedVertices: new AxialPosition[]{
+                            new AxialPosition(-1, 2),
+                            new AxialPosition(0, 3)
+                        }
+                    ),
+
+                    //Tip type 3rd neighbors
+                    new VertexGroup(
+                        primaryVertex: new AxialPosition(0, 0),
+                        secondaryVertex: new AxialPosition(2, -4),
+                        primaryPushedVertices: new AxialPosition[]
+                        {
+                            new AxialPosition(-1, 2)
+                        },
+                        secondaryPushedVertices: new AxialPosition[]
+                        {
+                            new AxialPosition(3, -6)
+                        }
+                    ),
+                    new VertexGroup(
+                        primaryVertex: new AxialPosition(0, 0),
+                        secondaryVertex: new AxialPosition(-4, 2),
+                        primaryPushedVertices: new AxialPosition[]
+                        {
+                            new AxialPosition(2, -1)
+                        },
+                        secondaryPushedVertices: new AxialPosition[]
+                        {
+                            new AxialPosition(-6, 3)
+                        }
+                    ),
+                    new VertexGroup(
+                        primaryVertex: new AxialPosition(0, 0),
+                        secondaryVertex: new AxialPosition(2, 2),
+                        primaryPushedVertices: new AxialPosition[]
+                        {
+                            new AxialPosition(-1, -1)
+                        },
+                        secondaryPushedVertices: new AxialPosition[]
+                        {
+                            new AxialPosition(3, 3)
+                        }
+                    ),
+
+                    //Fourth Neighbor Groups
+                    //Balloon type 4th neighbors
+                    new VertexGroup(
+                        primaryVertex: new AxialPosition(0, 0),
+                        secondaryVertex: new AxialPosition(3, -6),
+                        pinchedVertices: new AxialPosition[]{
+                            new AxialPosition(2, -4),
+                        }
+                    ),
+                    new VertexGroup(
+                        primaryVertex: new AxialPosition(0, 0),
+                        secondaryVertex: new AxialPosition(-6, 3),
+                        pinchedVertices: new AxialPosition[]{
+                            new AxialPosition(-4, 2),
+                        }
+                    ),
+                    new VertexGroup(
+                        primaryVertex: new AxialPosition(0, 0),
+                        secondaryVertex: new AxialPosition(3, 3),
+                        pinchedVertices: new AxialPosition[]{
+                            new AxialPosition(2, 2),
+                        }
+                    ),
+
+                    //Stem type 4th neighbors
+                    new VertexGroup(
+                        primaryVertex: new AxialPosition(0, 0),
+                        secondaryVertex: new AxialPosition(6, -3),
+                        pinchedVertices: new AxialPosition[]{
+                            new AxialPosition(2, -1),
+                        }
+                    ),
+                    new VertexGroup(
+                        primaryVertex: new AxialPosition(0, 0),
+                        secondaryVertex: new AxialPosition(-3, -3),
+                        pinchedVertices: new AxialPosition[]{
+                            new AxialPosition(-1, -1),
+                        }
+                    ),
+                    new VertexGroup(
+                        primaryVertex: new AxialPosition(0, 0),
+                        secondaryVertex: new AxialPosition(-3, 6),
+                        pinchedVertices: new AxialPosition[]{
+                            new AxialPosition(-1, 2),
+                        }
                     )
                 };
             }
@@ -345,23 +540,28 @@ namespace lionturtle
         public VertexGroup(
             AxialPosition primaryVertex,
             AxialPosition secondaryVertex,
-            AxialPosition[] primaryAffected,
-            AxialPosition[] secondaryAffected,
-            AxialPosition? squeezedVertex = null
+            AxialPosition[]? primaryPushedVertices = null,
+            AxialPosition[]? secondaryPushedVertices = null,
+            AxialPosition[]? pinchedVertices = null
             )
         {
             PrimaryVertex = primaryVertex;
             SecondaryVertex = secondaryVertex;
-            SqueezedVertex = squeezedVertex;
-            PrimaryAffected = primaryAffected;
-            SecondaryAffected = secondaryAffected;
+            if (pinchedVertices == null) PinchedVertices = Array.Empty<AxialPosition>();
+            else PinchedVertices = pinchedVertices;
+
+            if (primaryPushedVertices == null) PrimaryPushedVertices = Array.Empty<AxialPosition>();
+            else PrimaryPushedVertices = primaryPushedVertices;
+
+            if (secondaryPushedVertices == null) SecondaryPushedVertices = Array.Empty<AxialPosition>();
+            else SecondaryPushedVertices = secondaryPushedVertices;
         }
 
         public AxialPosition PrimaryVertex { get; }
         public AxialPosition SecondaryVertex { get; }
-        public AxialPosition? SqueezedVertex { get; }
-        public AxialPosition[] PrimaryAffected { get; }
-        public AxialPosition[] SecondaryAffected { get; }
+        public AxialPosition[] PinchedVertices { get; }
+        public AxialPosition[] PrimaryPushedVertices { get; }
+        public AxialPosition[] SecondaryPushedVertices { get; }
     }
 }
 
