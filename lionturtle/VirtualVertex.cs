@@ -30,6 +30,7 @@ namespace lionturtle
 			||   (newMax != null && min != null && newMax < min)
 			)
 			{
+				Console.WriteLine($"conflict for vertext at {position}, old min/max: {min}/{max}, new min/max: {newMin}/{newMax}");
 				throw new InvalidOperationException("Conflicting min/max constraints");
 			}
 

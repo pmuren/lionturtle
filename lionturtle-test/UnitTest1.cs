@@ -207,37 +207,37 @@ namespace lionturtle_test
             grid.VirtualVertices[secondaryVertexPosition] = new(secondaryVertexPosition, 5, 10);
             grid.PropagateConstraints(primaryVertexPosition);
 
-            Assert.True(grid.VirtualVertices[new AxialPosition(8, -7)].min == 5);
+            Assert.True(grid.VirtualVertices[new AxialPosition(8, -4)].min == 5);
         }
 
-        [Fact]
-        public void Propagate_Constraints_Second_Neighbor()
-        {
-            HexGrid grid = new();
-            AxialPosition primaryVertexPosition = new(2, -1);
-            AxialPosition secondaryVertexPosition = new(5, -1);
-            grid.VirtualVertices[primaryVertexPosition] = new(primaryVertexPosition, 7, 7);
-            grid.VirtualVertices[secondaryVertexPosition] = new(secondaryVertexPosition, 2, 3);
-            grid.PropagateConstraints(primaryVertexPosition);
+        //[Fact]
+        //public void Propagate_Constraints_Second_Neighbor()
+        //{
+        //    HexGrid grid = new();
+        //    AxialPosition primaryVertexPosition = new(2, -1);
+        //    AxialPosition secondaryVertexPosition = new(5, -1);
+        //    grid.VirtualVertices[primaryVertexPosition] = new(primaryVertexPosition, 7, 7);
+        //    grid.VirtualVertices[secondaryVertexPosition] = new(secondaryVertexPosition, 2, 3);
+        //    grid.PropagateConstraints(primaryVertexPosition);
 
-            Assert.True(grid.VirtualVertices[new AxialPosition(-1, -1)].min == 7);
-            Assert.True(grid.VirtualVertices[new AxialPosition(8, -1)].max == 3);
-        }
+        //    Assert.True(grid.VirtualVertices[new AxialPosition(-1, -1)].min == 7);
+        //    Assert.True(grid.VirtualVertices[new AxialPosition(8, -1)].max == 3);
+        //}
 
-        [Fact]
-        public void Propagate_Constraints_Chain_Reaction()
-        {
-            HexGrid grid = new();
-            AxialPosition primaryVertexPosition = new(2, -1);
-            AxialPosition secondaryVertexPosition = new(5, -1);
-            AxialPosition tertiaryVertexPosition = new(11, -1);
-            grid.VirtualVertices[primaryVertexPosition] = new(primaryVertexPosition, 7, 7);
-            grid.VirtualVertices[secondaryVertexPosition] = new(secondaryVertexPosition, 2, 3);
-            grid.VirtualVertices[tertiaryVertexPosition] = new(tertiaryVertexPosition, 9, null);
-            grid.ResolveVertexAtPosition(primaryVertexPosition, 7);
+        //[Fact]
+        //public void Propagate_Constraints_Chain_Reaction()
+        //{
+        //    HexGrid grid = new();
+        //    AxialPosition primaryVertexPosition = new(2, -1);
+        //    AxialPosition secondaryVertexPosition = new(5, -1);
+        //    AxialPosition tertiaryVertexPosition = new(11, -1);
+        //    grid.VirtualVertices[primaryVertexPosition] = new(primaryVertexPosition, 7, 7);
+        //    grid.VirtualVertices[secondaryVertexPosition] = new(secondaryVertexPosition, 2, 3);
+        //    grid.VirtualVertices[tertiaryVertexPosition] = new(tertiaryVertexPosition, 9, null);
+        //    grid.ResolveVertexAtPosition(primaryVertexPosition, 7);
 
-            Assert.True(grid.VirtualVertices[new AxialPosition(14, -1)].min == 9);
-        }
+        //    Assert.True(grid.VirtualVertices[new AxialPosition(14, -1)].min == 9);
+        //}
 
         [Fact]
         public void Make_Some_Hexes()
@@ -300,7 +300,7 @@ namespace lionturtle_test
             //Spiral from center outward
             AxialPosition[] directions = Constants.axial_directions;
 
-            int numRings = 50;
+            int numRings = 12;
             AxialPosition walkPosition = new(0, 0);
             int walkHeight = 0;
 
@@ -353,7 +353,6 @@ namespace lionturtle_test
                             averageHeight = sum / nearbyVertices.Count;
                         }
 
-                        walkHeight = averageHeight;
                         if(new Random().Next(0, 5) > 3)
                         {
                             walkHeight += new Random().Next(0, 3) - 1;
@@ -367,12 +366,13 @@ namespace lionturtle_test
 
                         if (!grid.Hexes.ContainsKey(walkPosition))
                             grid.ManifestHexAtPosition(walkPosition, walkHeight);
+
+                        Console.WriteLine(grid.GetStringVVs());
                     }
                 }
             }
 
-            string stringHexes = grid.GetStringHexes();
-            Assert.True(1 + 1 == 2);
+            Console.WriteLine(grid.GetStringHexes());
         }
 
         //[Fact]

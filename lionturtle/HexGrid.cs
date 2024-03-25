@@ -106,52 +106,39 @@ namespace lionturtle
 			}
         }
 
-		public void PropagateConstraints(AxialPosition position)
+        public void PinchAndPropagate(VirtualVertex vv, VirtualVertex vva, VirtualVertex vvb)
+        {
+            int? oldMin = vv.min;
+            int? oldMax = vv.max;
+
+            int? highMax = NullOrMax(vva.max, vvb.max);
+            int? lowMin = NullOrMin(vva.min, vvb.min);
+
+            vv.Constrain(lowMin, highMax);
+
+            if (vv.min != oldMin || vv.max != oldMax)
+            {
+                PropagationQueue.Enqueue(vv.position);
+            }
+        }
+
+        public static int? NullOrMax(int? a, int? b)
+        {
+            if (a == null || b == null) return null;
+            return Math.Max(a.Value, b.Value);
+        }
+
+        public static int? NullOrMin(int? a, int? b)
+        {
+            if (a == null || b == null) return null;
+            return Math.Min(a.Value, b.Value);
+        }
+
+        public void PropagateConstraints(AxialPosition position)
 		{
 			VertexGroup[] vGroups = GridUtilities.GetVertexGroups(position);
 
 			VirtualVertex primaryV = VirtualVertices[position];
-
-			AxialPosition[] longSpokes = new AxialPosition[]
-			{
-				new AxialPosition(6, 0),
-				new AxialPosition(6, -6),
-				new AxialPosition(0, -6),
-				new AxialPosition(-6, 0),
-				new AxialPosition(-6, 6),
-				new AxialPosition(0, 6),
-			};
-
-			AxialPosition[] shortSpokes = new AxialPosition[]
-			{
-				new AxialPosition(3, 0),
-				new AxialPosition(3, -3),
-				new AxialPosition(0, -3),
-				new AxialPosition(-3, 0),
-				new AxialPosition(-3, 3),
-				new AxialPosition(0, 3),
-			};
-
-            for (int i = 0; i < 6; i++)
-			{
-				if (VirtualVertices.ContainsKey(position + longSpokes[i]))
-				{
-					VirtualVertex secondaryV = VirtualVertices[position + longSpokes[i]];
-					AxialPosition squeezedVPosition = shortSpokes[i];
-					VirtualVertex squeezedV = GetOrCreateVirtualVertex(position + squeezedVPosition);
-
-					int? lowerMin = primaryV.min;
-					if (secondaryV.min == null) lowerMin = null;
-					else if (secondaryV.min < primaryV.min) lowerMin = secondaryV.min;
-
-					int? higherMax = primaryV.max;
-					if (secondaryV.max == null) higherMax = null;
-					else if (secondaryV.max > primaryV.max) higherMax = secondaryV.max;
-
-					ConstrainAndPropagate(squeezedV, lowerMin, higherMax);
-				}
-            }
-
 
             for (int i = 0; i < vGroups.Length; i++)
 			{
@@ -160,8 +147,17 @@ namespace lionturtle
 				{
 					VirtualVertex secondaryV = VirtualVertices[secondaryVPosition];
 
-					//primary is lower than secondary
-					if(primaryV.max < secondaryV.min)
+                    //handle pinches
+                    AxialPosition[] pinchedPositions = vGroups[i].PinchedVertices;
+                    for (int j = 0; j < pinchedPositions.Length; j++)
+                    {
+                        VirtualVertex vv = GetOrCreateVirtualVertex(position + pinchedPositions[j]);
+                        PinchAndPropagate(vv, primaryV, secondaryV);
+                    }
+
+                    //handle pushes
+                    //primary is lower than secondary
+                    if (primaryV.max < secondaryV.min)
 					{
                         AxialPosition[] primaryAffectedPositions = vGroups[i].PrimaryPushedVertices;
                         AxialPosition[] secondaryAffectedPositions = vGroups[i].SecondaryPushedVertices;
@@ -226,6 +222,31 @@ namespace lionturtle
             stringHexes += "}";
 
 			return stringHexes;
+        }
+
+        public string GetStringVVs()
+        {
+            string stringVVs = "vvs = new List<VirtualVertex>{";
+            foreach (KeyValuePair<AxialPosition, VirtualVertex> pair in VirtualVertices)
+            {
+                AxialPosition position = pair.Key;
+                VirtualVertex vv = pair.Value;
+
+				string minString = vv.min == null ? "null" : vv.min + "";
+				string maxString = vv.max == null ? "null" : vv.max + "";
+
+                string stringVV = $"new VirtualVertex {{" +
+					$"hexPosition = new HexCoordinate ({position.Q}, {position.R})," +
+					$"min = {minString}," +
+					$"max = {maxString}" +
+				$"}}";
+
+                stringVVs += stringVV;
+                stringVVs += ", ";
+            }
+            stringVVs += "};";
+
+            return stringVVs;
         }
     }
 }
