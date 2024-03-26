@@ -242,136 +242,48 @@ namespace lionturtle_test
         [Fact]
         public void Make_Some_Hexes()
         {
-            HexGrid grid = new();
-
-            //grid.ManifestHexAtPosition(new AxialPosition(0, 0), 0);
-
-            //int numPlacements = 0;
-            //int maxPlacements = 25000;
-            //while (numPlacements < maxPlacements)
-            //{
-            //    Random rand = new Random();
-            //    List<AxialPosition> hexPositions = grid.Hexes.Keys.ToList();
-            //    AxialPosition randomHexPosition = hexPositions[rand.Next(hexPositions.Count)];
-            //    int previousHeuristic = grid.Hexes[randomHexPosition].heuristic;
-
-            //    AxialPosition[] directions = Constants.axial_directions;
-            //    AxialPosition randomDirection = directions[rand.Next(directions.Length)];
-
-            //    AxialPosition candidateHexPosition = randomHexPosition + randomDirection;
-            //    if (!grid.Hexes.ContainsKey(candidateHexPosition))
-            //    {
-            //        int[] possibleHeuristics = new int[] {
-            //                previousHeuristic - 1,
-            //                previousHeuristic,
-            //                previousHeuristic,
-            //                previousHeuristic,
-            //                previousHeuristic,
-            //                previousHeuristic,
-            //                previousHeuristic + 1
-            //            };
-            //        int newHeuristic = possibleHeuristics[rand.Next(possibleHeuristics.Length)];
-            //        grid.ManifestHexAtPosition(candidateHexPosition, newHeuristic);
-            //    }
-
-            //    numPlacements++;
-            //}
-
-            //int numRings = 20;
-            //int lowIndex = -1 * numRings + 1;
-            //int highIndex = numRings;
-
-            //for (int q = lowIndex; q < highIndex; q++)
-            //{
-            //    for (int r = lowIndex; r < highIndex; r++)
-            //    {
-            //        for (int s = lowIndex; s < highIndex; s++)
-            //        {
-            //            if (q + r + s == 0)
-            //            {
-            //                if (!grid.Hexes.ContainsKey(new AxialPosition(q, r)))
-            //                    grid.ManifestHexAtPosition(new AxialPosition(q, r), new Random().Next(0, 4));
-            //            }
-            //        }
-            //    }
-            //}
-
-
-            //Spiral from center outward
             AxialPosition[] directions = Constants.axial_directions;
 
-            int numRings = 12;
-            AxialPosition walkPosition = new(0, 0);
-            int walkHeight = 0;
+            HexGrid grid = new();
 
-            grid.ManifestHexAtPosition(walkPosition, walkHeight);
+            grid.ManifestHexAtPosition(new AxialPosition(0, 0), 0);
 
-            for (int i = 1; i < numRings; i++)
+            int numPlacements = 0;
+            int maxPlacements = 200000;
+            while (numPlacements < maxPlacements)
             {
-                walkPosition += directions[4];
+                Random rand = new Random();
+                List<AxialPosition> hexPositions = grid.Hexes.Keys.ToList();
+                AxialPosition randomHexPosition = hexPositions[rand.Next(hexPositions.Count)];
+                int previousHeuristic = grid.Hexes[randomHexPosition].heuristic;
 
-                for (int j = 0; j < 6; j++)
+                AxialPosition randomDirection = directions[rand.Next(directions.Length)];
+
+                AxialPosition candidateHexPosition = randomHexPosition + randomDirection;
+                if (!grid.Hexes.ContainsKey(candidateHexPosition))
                 {
-                    for (int k = 0; k < i; k++)
-                    {
-                        walkPosition += directions[j];
-
-                        Dictionary<AxialPosition, Hex> nearbyHexes = new();
-                        for(int n = 0; n < 6; n++)
-                        {
-                            if(grid.Hexes.ContainsKey(walkPosition + directions[n]))
-                            {
-                                nearbyHexes[walkPosition + directions[n]] = grid.Hexes[walkPosition + directions[n]];
-                            }
-
-                            for(int nn = 0; nn < 6; nn++)
-                            {
-                                if(grid.Hexes.ContainsKey(walkPosition + directions[n] + directions[nn]))
-                                {
-                                    nearbyHexes[walkPosition + directions[n] + directions[nn]] = grid.Hexes[walkPosition + directions[n] + directions[nn]];
-                                }
-                            }
-                        }
-
-                        HashSet<Vertex> nearbyVertices = new();
-                        foreach(AxialPosition key in nearbyHexes.Keys)
-                        {
-                            for(int m = 0; m < 6; m++)
-                            {
-                                nearbyVertices.Add(nearbyHexes[key].Verts[m]);
-                            }
-                        }
-
-                        int averageHeight = walkHeight;
-                        if(nearbyVertices.Count != 0)
-                        {
-                            int sum = 0;
-                            foreach(Vertex v in nearbyVertices)
-                            {
-                                sum += v.height;
-                            }
-                            averageHeight = sum / nearbyVertices.Count;
-                        }
-
-                        if(new Random().Next(0, 5) > 3)
-                        {
-                            walkHeight += new Random().Next(0, 3) - 1;
-                        }
-
-                        if (new Random().Next(0, 5) > 3)
-                        {
-                            walkHeight += new Random().Next(0, 3) - 1;
-                        }
-
-
-                        if (!grid.Hexes.ContainsKey(walkPosition))
-                            grid.ManifestHexAtPosition(walkPosition, walkHeight);
-
-                        Console.WriteLine(grid.GetStringVVs());
-                    }
+                    int[] possibleHeuristics = new int[] {
+                            previousHeuristic - 1,
+                            previousHeuristic,
+                            previousHeuristic,
+                            previousHeuristic,
+                            previousHeuristic,
+                            previousHeuristic,
+                            previousHeuristic,
+                            previousHeuristic,
+                            previousHeuristic,
+                            previousHeuristic,
+                            previousHeuristic,
+                            previousHeuristic,
+                            previousHeuristic,
+                            previousHeuristic + 1
+                        };
+                    int newHeuristic = possibleHeuristics[rand.Next(possibleHeuristics.Length)];
+                    grid.ManifestHexAtPosition(candidateHexPosition, newHeuristic);
                 }
-            }
 
+                numPlacements++;
+            }
             Console.WriteLine(grid.GetStringHexes());
         }
 
