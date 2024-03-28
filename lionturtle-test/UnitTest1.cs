@@ -210,46 +210,86 @@ namespace lionturtle_test
             Assert.True(grid.VirtualVertices[new AxialPosition(8, -4)].min == 5);
         }
 
-        //[Fact]
-        //public void Propagate_Constraints_Second_Neighbor()
-        //{
-        //    HexGrid grid = new();
-        //    AxialPosition primaryVertexPosition = new(2, -1);
-        //    AxialPosition secondaryVertexPosition = new(5, -1);
-        //    grid.VirtualVertices[primaryVertexPosition] = new(primaryVertexPosition, 7, 7);
-        //    grid.VirtualVertices[secondaryVertexPosition] = new(secondaryVertexPosition, 2, 3);
-        //    grid.PropagateConstraints(primaryVertexPosition);
-
-        //    Assert.True(grid.VirtualVertices[new AxialPosition(-1, -1)].min == 7);
-        //    Assert.True(grid.VirtualVertices[new AxialPosition(8, -1)].max == 3);
-        //}
-
-        //[Fact]
-        //public void Propagate_Constraints_Chain_Reaction()
-        //{
-        //    HexGrid grid = new();
-        //    AxialPosition primaryVertexPosition = new(2, -1);
-        //    AxialPosition secondaryVertexPosition = new(5, -1);
-        //    AxialPosition tertiaryVertexPosition = new(11, -1);
-        //    grid.VirtualVertices[primaryVertexPosition] = new(primaryVertexPosition, 7, 7);
-        //    grid.VirtualVertices[secondaryVertexPosition] = new(secondaryVertexPosition, 2, 3);
-        //    grid.VirtualVertices[tertiaryVertexPosition] = new(tertiaryVertexPosition, 9, null);
-        //    grid.ResolveVertexAtPosition(primaryVertexPosition, 7);
-
-        //    Assert.True(grid.VirtualVertices[new AxialPosition(14, -1)].min == 9);
-        //}
-
         [Fact]
-        public void Make_Some_Hexes()
+        public void Generate_Spiral_Perlin()
         {
             AxialPosition[] directions = Constants.axial_directions;
 
             HexGrid grid = new();
 
+            //Spiral from center outward
+            int numRings = 50;
+            AxialPosition walkPosition = new(0, 0);
+
+            int zero_heuristic = GetPerlinHeuristic(walkPosition);
+            grid.ManifestHexAtPosition(walkPosition, zero_heuristic);
+
+            for (int i = 0; i < numRings; i++)
+            {
+                for (int j = 0; j < 6; j++)
+                {
+                    for (int k = 0; k < i; k++)
+                    {
+                        walkPosition += directions[j];
+
+                        int heuristic = GetPerlinHeuristic(walkPosition);
+
+                        grid.ManifestHexAtPosition(walkPosition, heuristic);
+                    }
+                }
+                walkPosition += directions[4];
+            }
+
+            Console.WriteLine(grid.GetStringHexes());
+        }
+
+        static Random rand = new Random();
+        static int firstSeed = rand.Next(200);
+        PerlinNoise lowNoise = new PerlinNoise(firstSeed + 0);
+        PerlinNoise midNoise = new PerlinNoise(firstSeed + 1);
+        PerlinNoise highNoise = new PerlinNoise(firstSeed + 2);
+        PerlinNoise superHighNoise = new PerlinNoise(firstSeed + 3);
+
+        public int GetPerlinHeuristic(AxialPosition axial)
+        {
+            var v2 = GridUtilities.AxialPositionToVector2(axial);
+            double perlinBassOctave = lowNoise.Noise(v2.X / 64, v2.Y / 64) * 5f;
+            double perlinSubOctave = lowNoise.Noise(v2.X / 32, v2.Y / 32) * 4f;
+            double perlinLowOctave = lowNoise.Noise(v2.X / 16, v2.Y / 16) * 10f;
+            double perlinMidOctave = midNoise.Noise(v2.X / 8, v2.Y / 8) * 3f;
+            double perlinHighOctave = highNoise.Noise(v2.X / 4, v2.Y / 4) * 1f;
+            double perlinSuperHighOctave = superHighNoise.Noise(v2.X / 2, v2.Y / 2) * 0f;
+            //int perlinHeuristic = (int)Math.Floor((perlinLowOctave + perlinMidOctave + perlinHighOctave + perlinSuperHighOctave) / 4.0f);
+            //int perlinHeuristic = (int)Math.Floor((perlinLowOctave + perlinMidOctave + perlinHighOctave) / 3.0f);
+
+            double boost = 1.4f;
+
+            int perlinHeuristic = (int)Math.Floor((perlinLowOctave + perlinMidOctave + perlinHighOctave + perlinSuperHighOctave + perlinSubOctave + perlinBassOctave)*boost);
+            return perlinHeuristic;
+        }
+
+        [Fact]
+        public void Perlin_Height()
+        {
+            PerlinNoise noise = new PerlinNoise(0);
+
+            double x = 10.5;
+            double y = -4.2;
+            double height = noise.Noise(x, y);
+
+            Console.WriteLine($"Height at ({x}, {y}): {height}");
+        }
+
+        [Fact]
+        public void Generate_Dendritic()
+        {
+            AxialPosition[] directions = Constants.axial_directions;
+            HexGrid grid = new();
+
             grid.ManifestHexAtPosition(new AxialPosition(0, 0), 0);
 
             int numPlacements = 0;
-            int maxPlacements = 200000;
+            int maxPlacements = 1000;
             while (numPlacements < maxPlacements)
             {
                 Random rand = new Random();
@@ -286,28 +326,5 @@ namespace lionturtle_test
             }
             Console.WriteLine(grid.GetStringHexes());
         }
-
-        //[Fact]
-        //public void Manifest_New_Vertex_At_Position()
-        //{
-        //    HexGrid grid = new();
-        //    AxialPosition vertexPosition = new AxialPosition(2, -1);
-        //    VirtualVertex blurryVertex = grid.DeterminePossibleValuesForVertex(vertexPosition);
-        //    int vertexHeight = blurryVertex.Resolve(5);
-        //    Vertex newVertex = new Vertex(vertexPosition, vertexHeight);
-        //}
-
-        //[Fact]
-        //public void The_Algorithm()
-        //{
-        //    HexGrid grid = new();
-        //    Func<float, float, int> heuristicSampler = (float x, float y) => new Random().Next(0, 6);
-
-        //    //Manifest a new hexagon
-        //        //Manifest a new Vertex
-        //        //Use existing vertices to discover constraints (virtual vertices)
-        //        //Use rules that respect constraints to determine range of allowed values for vertex
-        //        //Manifest according to allowed range and heuristic
-        //}
     }
 }

@@ -98,7 +98,16 @@ namespace lionturtle
             int? oldMin = vv.min;
             int? oldMax = vv.max;
 
-            vv.Constrain(newMin, newMax);
+            try
+            {
+                vv.Constrain(newMin, newMax);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(this.GetStringVVs());
+                Console.WriteLine(this.GetStringHexes());
+                throw e;
+            }
 
             if (vv.min != oldMin || vv.max != oldMax)
 			{
@@ -114,7 +123,16 @@ namespace lionturtle
             int? highMax = NullOrMax(vva.max, vvb.max);
             int? lowMin = NullOrMin(vva.min, vvb.min);
 
-            vv.Constrain(lowMin, highMax);
+            try
+            {
+                vv.Constrain(lowMin, highMax);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(this.GetStringVVs());
+                Console.WriteLine(this.GetStringHexes());
+                throw e;
+            }
 
             if (vv.min != oldMin || vv.max != oldMax)
             {
@@ -135,17 +153,17 @@ namespace lionturtle
         }
 
         public void PropagateConstraints(AxialPosition position)
-		{
-			VertexGroup[] vGroups = GridUtilities.GetVertexGroups(position);
+        {
+            VertexGroup[] vGroups = GridUtilities.GetVertexGroups(position);
 
-			VirtualVertex primaryV = VirtualVertices[position];
+            VirtualVertex primaryV = VirtualVertices[position];
 
             for (int i = 0; i < vGroups.Length; i++)
-			{
-				AxialPosition secondaryVPosition = position + vGroups[i].SecondaryVertex;
-				if (VirtualVertices.ContainsKey(secondaryVPosition))
-				{
-					VirtualVertex secondaryV = VirtualVertices[secondaryVPosition];
+            {
+                AxialPosition secondaryVPosition = position + vGroups[i].SecondaryVertex;
+                if (VirtualVertices.ContainsKey(secondaryVPosition))
+                {
+                    VirtualVertex secondaryV = VirtualVertices[secondaryVPosition];
 
                     //handle pinches
                     AxialPosition[] pinchedPositions = vGroups[i].PinchedVertices;
@@ -158,7 +176,7 @@ namespace lionturtle
                     //handle pushes
                     //primary is lower than secondary
                     if (primaryV.max < secondaryV.min)
-					{
+                    {
                         AxialPosition[] primaryAffectedPositions = vGroups[i].PrimaryPushedVertices;
                         AxialPosition[] secondaryAffectedPositions = vGroups[i].SecondaryPushedVertices;
 
@@ -169,13 +187,13 @@ namespace lionturtle
                         }
 
                         for (int j = 0; j < secondaryAffectedPositions.Length; j++)
-						{
-							VirtualVertex vv = GetOrCreateVirtualVertex(position + secondaryAffectedPositions[j]);
+                        {
+                            VirtualVertex vv = GetOrCreateVirtualVertex(position + secondaryAffectedPositions[j]);
                             ConstrainAndPropagate(vv, secondaryV.min, null);
                         }
                     }
 
-					//primary is higher than secondary
+                    //primary is higher than secondary
                     if (primaryV.min > secondaryV.max)
                     {
                         AxialPosition[] primaryAffectedPositions = vGroups[i].PrimaryPushedVertices;
@@ -195,10 +213,10 @@ namespace lionturtle
                         }
                     }
                 }
-			}
-		}
+            }
+        }
 
-		public string GetStringHexes()
+        public string GetStringHexes()
 		{
             string stringHexes = "hexes = {";
             foreach (KeyValuePair<AxialPosition, Hex> pair in Hexes)
