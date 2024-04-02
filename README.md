@@ -9,7 +9,7 @@ A C# Library for creating hex-grid-based terrain in a very particular style that
 ![image](https://github.com/pmuren/lionturtle/assets/4354850/4729e2f5-c439-4c99-8c79-9070d9fc5f0b)
 <sup> The same grid viewed from above. </sup>
 
-with this library, users can approximate any heightmap by supplying a function for sampling the height at any point (x, y)
+With this library, users can approximate any heightmap that can be sampled at each vertex.
 `(x, y) => z`.
 
 I am finally satisfied with the geometry, and now there is so much more I want to do! :)
