@@ -157,7 +157,7 @@ namespace lionturtle_test
         public void Resolve_Virtual_Vertex_With_Heuristic()
         {
             VirtualVertex vv = new(new AxialPosition(0, 0), 4, 10);
-            int resolution = vv.Resolve(0);
+            double resolution = vv.Resolve(0);
             Assert.True(resolution == 4);
 
             vv = new(new AxialPosition(0, 0), 4, 10);
@@ -218,10 +218,10 @@ namespace lionturtle_test
             HexGrid grid = new();
 
             //Spiral from center outward
-            int numRings = 50;
+            int numRings = 8;
             AxialPosition walkPosition = new(0, 0);
 
-            int zero_heuristic = GetPerlinHeuristic(walkPosition);
+            double zero_heuristic = GetPerlinHeuristic(walkPosition);
             grid.ManifestHexAtPosition(walkPosition, zero_heuristic);
 
             for (int i = 0; i < numRings; i++)
@@ -232,7 +232,7 @@ namespace lionturtle_test
                     {
                         walkPosition += directions[j];
 
-                        int heuristic = GetPerlinHeuristic(walkPosition);
+                        double heuristic = GetPerlinHeuristic(walkPosition);
 
                         grid.ManifestHexAtPosition(walkPosition, heuristic);
                     }
@@ -244,29 +244,45 @@ namespace lionturtle_test
         }
 
         static Random rand = new Random();
-        static int firstSeed = rand.Next(200);
+        //static int firstSeed = rand.Next(200);
+        static int firstSeed = 99;
         PerlinNoise lowNoise = new PerlinNoise(firstSeed + 0);
         PerlinNoise midNoise = new PerlinNoise(firstSeed + 1);
         PerlinNoise highNoise = new PerlinNoise(firstSeed + 2);
         PerlinNoise superHighNoise = new PerlinNoise(firstSeed + 3);
 
-        public int GetPerlinHeuristic(AxialPosition axial)
+        public double GetPerlinHeuristic(AxialPosition axial)
         {
             var v2 = GridUtilities.AxialPositionToVector2(axial);
-            double perlinBassOctave = lowNoise.Noise(v2.X / 64, v2.Y / 64) * 5f;
-            double perlinSubOctave = lowNoise.Noise(v2.X / 32, v2.Y / 32) * 4f;
-            double perlinLowOctave = lowNoise.Noise(v2.X / 16, v2.Y / 16) * 10f;
-            double perlinMidOctave = midNoise.Noise(v2.X / 8, v2.Y / 8) * 3f;
+            double perlinDeepOctave = lowNoise.Noise(v2.X / 128, v2.Y / 128) * 2f;
+            //double perlinBassOctave = lowNoise.Noise(v2.X / 64, v2.Y / 64) * 2f;
+            //double perlinSubOctave = lowNoise.Noise(v2.X / 32, v2.Y / 32) * 2f;
+            //double perlinLowOctave = lowNoise.Noise(v2.X / 16, v2.Y / 16) * 2f;
+            //double perlinMidOctave = midNoise.Noise(v2.X / 8, v2.Y / 8) * 3.5f;
+            //double perlinHighOctave = highNoise.Noise(v2.X / 4, v2.Y / 4) * 0.5f;
+            //double perlinSuperHighOctave = superHighNoise.Noise(v2.X / 2, v2.Y / 2) * 0.25f;
+            double perlinBassOctave = lowNoise.Noise(v2.X / 64, v2.Y / 64) * 4f;
+            double perlinSubOctave = lowNoise.Noise(v2.X / 32, v2.Y / 32) * 3f;
+            double perlinLowOctave = lowNoise.Noise(v2.X / 16, v2.Y / 16) * 1f;
+            double perlinMidOctave = midNoise.Noise(v2.X / 8, v2.Y / 8) * 5f;
             double perlinHighOctave = highNoise.Noise(v2.X / 4, v2.Y / 4) * 1f;
             double perlinSuperHighOctave = superHighNoise.Noise(v2.X / 2, v2.Y / 2) * 0f;
             //int perlinHeuristic = (int)Math.Floor((perlinLowOctave + perlinMidOctave + perlinHighOctave + perlinSuperHighOctave) / 4.0f);
             //int perlinHeuristic = (int)Math.Floor((perlinLowOctave + perlinMidOctave + perlinHighOctave) / 3.0f);
 
-            double boost = 1.4f;
+            double boost = 1f;
 
-            int perlinHeuristic = (int)Math.Floor((perlinLowOctave + perlinMidOctave + perlinHighOctave + perlinSuperHighOctave + perlinSubOctave + perlinBassOctave)*boost);
+            double perlinHeuristic = (perlinDeepOctave + perlinLowOctave + perlinMidOctave + perlinHighOctave + perlinSuperHighOctave + perlinSubOctave + perlinBassOctave)*boost;
             return perlinHeuristic;
         }
+
+        //var v2 = GridUtilities.AxialPositionToVector2(axial);
+        //double perlinBassOctave = lowNoise.Noise(v2.X / 64, v2.Y / 64) * 4f;
+        //double perlinSubOctave = lowNoise.Noise(v2.X / 32, v2.Y / 32) * 3f;
+        //double perlinLowOctave = lowNoise.Noise(v2.X / 16, v2.Y / 16) * 1f;
+        //double perlinMidOctave = midNoise.Noise(v2.X / 8, v2.Y / 8) * 5f;
+        //double perlinHighOctave = highNoise.Noise(v2.X / 4, v2.Y / 4) * 1f;
+        //double perlinSuperHighOctave = superHighNoise.Noise(v2.X / 2, v2.Y / 2) * 0f;
 
         [Fact]
         public void Perlin_Height()
@@ -295,14 +311,14 @@ namespace lionturtle_test
                 Random rand = new Random();
                 List<AxialPosition> hexPositions = grid.Hexes.Keys.ToList();
                 AxialPosition randomHexPosition = hexPositions[rand.Next(hexPositions.Count)];
-                int previousHeuristic = grid.Hexes[randomHexPosition].heuristic;
+                double previousHeuristic = grid.Hexes[randomHexPosition].heuristic;
 
                 AxialPosition randomDirection = directions[rand.Next(directions.Length)];
 
                 AxialPosition candidateHexPosition = randomHexPosition + randomDirection;
                 if (!grid.Hexes.ContainsKey(candidateHexPosition))
                 {
-                    int[] possibleHeuristics = new int[] {
+                    double[] possibleHeuristics = new double[] {
                             previousHeuristic - 1,
                             previousHeuristic,
                             previousHeuristic,
@@ -318,7 +334,7 @@ namespace lionturtle_test
                             previousHeuristic,
                             previousHeuristic + 1
                         };
-                    int newHeuristic = possibleHeuristics[rand.Next(possibleHeuristics.Length)];
+                    double newHeuristic = possibleHeuristics[rand.Next(possibleHeuristics.Length)];
                     grid.ManifestHexAtPosition(candidateHexPosition, newHeuristic);
                 }
 

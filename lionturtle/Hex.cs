@@ -1,4 +1,4 @@
 ﻿namespace lionturtle
 {
-    public record Hex(Vertex[] Verts, int heuristic);
+    public record Hex(Vertex[] Verts, double heuristic);
 }

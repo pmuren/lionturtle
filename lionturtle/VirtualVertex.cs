@@ -4,10 +4,10 @@ namespace lionturtle
 	public class VirtualVertex
 	{
 		public AxialPosition position;
-		public int? min;
-		public int? max;
+		public double? min;
+		public double? max;
 
-		public VirtualVertex(AxialPosition inPosition, int? inMin, int? inMax)
+		public VirtualVertex(AxialPosition inPosition, double? inMin, double? inMax)
 		{
 			position = inPosition;
 			min = inMin;
@@ -19,11 +19,11 @@ namespace lionturtle
             }
         }
 
-		public bool Constrain(int? newMin, int? newMax)
+		public bool Constrain(double? newMin, double? newMax)
 		{
 			bool changed;
-			int? initMin = min;
-			int? initMax = max;
+			double? initMin = min;
+			double? initMax = max;
 
 			if ( (newMin != null && newMax != null && newMin > newMax)
 			||   (newMin != null && max != null && newMin > max)
@@ -44,7 +44,7 @@ namespace lionturtle
 			return changed;
 		}
 
-        public int Resolve(int heuristic)
+        public double Resolve(double heuristic)
         {
 			if(min == null || min < heuristic)
 			{
@@ -90,14 +90,14 @@ namespace lionturtle
 
 			if (min.HasValue && max.HasValue)
 			{
-				int resolvedValue;
+				double resolvedValue;
 				if(min != max)
 				{
                     throw new InvalidOperationException("Failed to resolve, min and max are not equal");
 				}
 				else
 				{
-					resolvedValue = (int)max;
+					resolvedValue = (double)max;
 					return resolvedValue;
 				}
 			}
