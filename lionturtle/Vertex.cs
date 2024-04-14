@@ -3,9 +3,9 @@
 	public class Vertex
 	{
 		public AxialPosition position { get; set; }
-		public int height;
+		public double height;
 
-        public Vertex(AxialPosition inPosition, int inHeight)
+        public Vertex(AxialPosition inPosition, double inHeight)
 		{
 			position = inPosition;
 			height = inHeight;

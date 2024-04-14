@@ -40,7 +40,7 @@ namespace lionturtle
 				: null;
         }
 
-        public void ManifestHexAtPosition(AxialPosition position, int heuristic)
+        public void ManifestHexAtPosition(AxialPosition position, double heuristic)
 		{
 			Vertex[] verts = new Vertex[6];
 
@@ -79,24 +79,24 @@ namespace lionturtle
 				
         }
 
-		public Vertex ResolveVertexAtPosition(AxialPosition position, int heuristic)
+		public Vertex ResolveVertexAtPosition(AxialPosition position, double heuristic)
 		{
-			VirtualVertex blurryVertex = GetOrCreateVirtualVertex(position);
-			int height = blurryVertex.Resolve(heuristic);
-			Vertex newVert = new(position, height);
+            VirtualVertex blurryVertex = GetOrCreateVirtualVertex(position);
+            double height = blurryVertex.Resolve(heuristic);
+            Vertex newVert = new(position, height);
             Vertices[position] = newVert;
 			PropagationQueue.Enqueue(position);
 			while(PropagationQueue.Count > 0)
-			{
-				PropagateConstraints(PropagationQueue.Dequeue());
+            {
+                PropagateConstraints(PropagationQueue.Dequeue());
             }
             return newVert;
         }
 
-		public void ConstrainAndPropagate(VirtualVertex vv, int? newMin, int? newMax)
+		public void ConstrainAndPropagate(VirtualVertex vv, double? newMin, double? newMax)
 		{
-            int? oldMin = vv.min;
-            int? oldMax = vv.max;
+            double? oldMin = vv.min;
+            double? oldMax = vv.max;
 
             try
             {
@@ -117,11 +117,11 @@ namespace lionturtle
 
         public void PinchAndPropagate(VirtualVertex vv, VirtualVertex vva, VirtualVertex vvb)
         {
-            int? oldMin = vv.min;
-            int? oldMax = vv.max;
+            double? oldMin = vv.min;
+            double? oldMax = vv.max;
 
-            int? highMax = NullOrMax(vva.max, vvb.max);
-            int? lowMin = NullOrMin(vva.min, vvb.min);
+            double? highMax = NullOrMax(vva.max, vvb.max);
+            double? lowMin = NullOrMin(vva.min, vvb.min);
 
             try
             {
@@ -140,13 +140,13 @@ namespace lionturtle
             }
         }
 
-        public static int? NullOrMax(int? a, int? b)
+        public static double? NullOrMax(double? a, double? b)
         {
             if (a == null || b == null) return null;
             return Math.Max(a.Value, b.Value);
         }
 
-        public static int? NullOrMin(int? a, int? b)
+        public static double? NullOrMin(double? a, double? b)
         {
             if (a == null || b == null) return null;
             return Math.Min(a.Value, b.Value);
