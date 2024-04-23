@@ -13,3 +13,6 @@ With this library, users can approximate any heightmap that can be sampled at ea
 `(x, y) => z`.
 
 I am finally satisfied with the geometry, and now there is so much more I want to do! :)
+
+![image](https://github.com/pmuren/lionturtle/assets/4354850/202778ca-a2bf-4c2d-ab37-b62514cf276e)
+<sup> An example Godot 4 project that uses this library to inform the geometry of a mesh. </sup>
