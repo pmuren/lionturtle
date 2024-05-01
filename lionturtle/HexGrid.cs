@@ -60,11 +60,35 @@ namespace lionturtle
                 }
 			}
 
-            Hex newHex = new(verts, heuristic);
+            Hex newHex = new(verts);
             Hexes[position] = newHex;
         }
 
-		public VirtualVertex GetOrCreateVirtualVertex(AxialPosition position)
+        public void ManifestVerticesAtPosition(AxialPosition position, double[] heuristics)
+        {
+            Vertex[] verts = new Vertex[6];
+
+            AxialPosition[] vertexPositions = GridUtilities.GetVertexPositionsFromHexPosiiton(position);
+
+            for (int i = 0; i < vertexPositions.Length; i++)
+            {
+                Vertex? existingVertex = FindExistingVertexForHexV(position, i);
+                if (existingVertex != null)
+                {
+                    verts[i] = existingVertex;
+                }
+                else
+                {
+                    Vertex newVert = ResolveVertexAtPosition(vertexPositions[i], heuristics[i]);
+                    verts[i] = newVert;
+                }
+            }
+
+            Hex newHex = new(verts);
+            Hexes[position] = newHex;
+        }
+
+        public VirtualVertex GetOrCreateVirtualVertex(AxialPosition position)
 		{
 			if (VirtualVertices.ContainsKey(position))
 			{
@@ -81,16 +105,28 @@ namespace lionturtle
 
 		public Vertex ResolveVertexAtPosition(AxialPosition position, double heuristic)
 		{
-            VirtualVertex blurryVertex = GetOrCreateVirtualVertex(position);
-            double height = blurryVertex.Resolve(heuristic);
-            Vertex newVert = new(position, height);
-            Vertices[position] = newVert;
-			PropagationQueue.Enqueue(position);
-			while(PropagationQueue.Count > 0)
+            bool freeform = false;
+            if (freeform)
             {
-                PropagateConstraints(PropagationQueue.Dequeue());
+                double height = heuristic;
+                Vertex newVert = new(position, height);
+                Vertices[position] = newVert;
+                return newVert;
             }
-            return newVert;
+            else
+            {
+                VirtualVertex blurryVertex = GetOrCreateVirtualVertex(position);
+                double height = blurryVertex.Resolve(heuristic);
+                Vertex newVert = new(position, height);
+                Vertices[position] = newVert;
+                PropagationQueue.Enqueue(position);
+                while (PropagationQueue.Count > 0)
+                {
+                    PropagateConstraints(PropagationQueue.Dequeue());
+                }
+                return newVert;
+            }
+            
         }
 
 		public void ConstrainAndPropagate(VirtualVertex vv, double? newMin, double? newMax)

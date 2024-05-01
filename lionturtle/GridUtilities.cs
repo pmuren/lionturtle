@@ -40,11 +40,11 @@ namespace lionturtle
             return hexPosition + n0Position + n1Position;
         }
 
-        public static Vector2 AxialPositionToVector2(AxialPosition axial)
+        public static Vec2 AxialPositionToVec2(AxialPosition axial)
         {
             double x = (Math.Sqrt(3) * axial.Q + Math.Sqrt(3) / 2 * axial.R);
             double y = (3.0 / 2 * axial.R * -1);
-            return new Vector2(x, y);
+            return new Vec2(x, y);
         }
 
         public static VertexGroup[] GetVertexGroups(AxialPosition primaryVertexPosition)

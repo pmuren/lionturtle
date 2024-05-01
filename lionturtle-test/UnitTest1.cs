@@ -218,11 +218,28 @@ namespace lionturtle_test
             HexGrid grid = new();
 
             //Spiral from center outward
-            int numRings = 8;
-            AxialPosition walkPosition = new(0, 0);
+            int numRings = 20;
+            AxialPosition axialPosition = new(0, 0);
 
-            double zero_heuristic = GetPerlinHeuristic(walkPosition);
-            grid.ManifestHexAtPosition(walkPosition, zero_heuristic);
+
+            Random rand = new Random();
+            int firstSeed = rand.Next(500);
+            //int firstSeed = 95;
+
+            //#################################################################
+            int numOctaves = 16;
+            double shortestWavelength = 2f;
+            double amplitude = 1.5f;
+
+            List<PerlinNoise> octaves = new List<PerlinNoise>();
+
+            for (int i = 0; i < numOctaves; i++)
+            {
+                octaves.Add(new PerlinNoise(firstSeed + i));
+            }
+
+            double zero_heuristic = SampleOctaves(axialPosition, octaves, shortestWavelength, amplitude);
+            grid.ManifestHexAtPosition(axialPosition, 0);
 
             for (int i = 0; i < numRings; i++)
             {
@@ -230,59 +247,31 @@ namespace lionturtle_test
                 {
                     for (int k = 0; k < i; k++)
                     {
-                        walkPosition += directions[j];
-
-                        double heuristic = GetPerlinHeuristic(walkPosition);
-
-                        grid.ManifestHexAtPosition(walkPosition, heuristic);
+                        axialPosition += directions[j];
+                        double heuristic = SampleOctaves(axialPosition, octaves, shortestWavelength, amplitude);
+                        grid.ManifestHexAtPosition(axialPosition, heuristic - zero_heuristic);
                     }
                 }
-                walkPosition += directions[4];
+                axialPosition += directions[4];
             }
 
             Console.WriteLine(grid.GetStringHexes());
         }
 
-        static Random rand = new Random();
-        //static int firstSeed = rand.Next(200);
-        static int firstSeed = 99;
-        PerlinNoise lowNoise = new PerlinNoise(firstSeed + 0);
-        PerlinNoise midNoise = new PerlinNoise(firstSeed + 1);
-        PerlinNoise highNoise = new PerlinNoise(firstSeed + 2);
-        PerlinNoise superHighNoise = new PerlinNoise(firstSeed + 3);
-
-        public double GetPerlinHeuristic(AxialPosition axial)
+        public double SampleOctaves(AxialPosition axial, List<PerlinNoise> octaves, double shortestWavelength, double amplitude)
         {
-            var v2 = GridUtilities.AxialPositionToVector2(axial);
-            double perlinDeepOctave = lowNoise.Noise(v2.X / 128, v2.Y / 128) * 2f;
-            //double perlinBassOctave = lowNoise.Noise(v2.X / 64, v2.Y / 64) * 2f;
-            //double perlinSubOctave = lowNoise.Noise(v2.X / 32, v2.Y / 32) * 2f;
-            //double perlinLowOctave = lowNoise.Noise(v2.X / 16, v2.Y / 16) * 2f;
-            //double perlinMidOctave = midNoise.Noise(v2.X / 8, v2.Y / 8) * 3.5f;
-            //double perlinHighOctave = highNoise.Noise(v2.X / 4, v2.Y / 4) * 0.5f;
-            //double perlinSuperHighOctave = superHighNoise.Noise(v2.X / 2, v2.Y / 2) * 0.25f;
-            double perlinBassOctave = lowNoise.Noise(v2.X / 64, v2.Y / 64) * 4f;
-            double perlinSubOctave = lowNoise.Noise(v2.X / 32, v2.Y / 32) * 3f;
-            double perlinLowOctave = lowNoise.Noise(v2.X / 16, v2.Y / 16) * 1f;
-            double perlinMidOctave = midNoise.Noise(v2.X / 8, v2.Y / 8) * 5f;
-            double perlinHighOctave = highNoise.Noise(v2.X / 4, v2.Y / 4) * 1f;
-            double perlinSuperHighOctave = superHighNoise.Noise(v2.X / 2, v2.Y / 2) * 0f;
-            //int perlinHeuristic = (int)Math.Floor((perlinLowOctave + perlinMidOctave + perlinHighOctave + perlinSuperHighOctave) / 4.0f);
-            //int perlinHeuristic = (int)Math.Floor((perlinLowOctave + perlinMidOctave + perlinHighOctave) / 3.0f);
+            var v2 = GridUtilities.AxialPositionToVec2(axial);
+            double composite = 0;
 
-            double boost = 1f;
+            for(int i = 0; i < octaves.Count; i++)
+            {
+                double twoToI = Math.Pow(2, i);
+                double sample = octaves[i].Noise(v2.X / (shortestWavelength*twoToI), v2.Y / (shortestWavelength*twoToI)) * (amplitude*i);
+                composite += sample;
+            }
 
-            double perlinHeuristic = (perlinDeepOctave + perlinLowOctave + perlinMidOctave + perlinHighOctave + perlinSuperHighOctave + perlinSubOctave + perlinBassOctave)*boost;
-            return perlinHeuristic;
+            return composite;
         }
-
-        //var v2 = GridUtilities.AxialPositionToVector2(axial);
-        //double perlinBassOctave = lowNoise.Noise(v2.X / 64, v2.Y / 64) * 4f;
-        //double perlinSubOctave = lowNoise.Noise(v2.X / 32, v2.Y / 32) * 3f;
-        //double perlinLowOctave = lowNoise.Noise(v2.X / 16, v2.Y / 16) * 1f;
-        //double perlinMidOctave = midNoise.Noise(v2.X / 8, v2.Y / 8) * 5f;
-        //double perlinHighOctave = highNoise.Noise(v2.X / 4, v2.Y / 4) * 1f;
-        //double perlinSuperHighOctave = superHighNoise.Noise(v2.X / 2, v2.Y / 2) * 0f;
 
         [Fact]
         public void Perlin_Height()
