@@ -18,6 +18,38 @@ namespace lionturtle
 			PropagationQueue = new();
 		}
 
+        //TODO: Put this somewhere else!
+        public void Populate()
+        {
+            SlotGrid grid = new SlotGrid();
+            grid.CollapseEverything();
+
+            var hexes = new Dictionary<AxialPosition, int[]>();
+            foreach (AxialPosition position in grid.Slots.Keys)
+            {
+                var tileHeight = grid.TileHeights[position];
+                var relativeVertexHeights = grid.Slots[position].modules.First().GetRelativeVertexHeights();
+                int[] hex = new int[6];
+                for (int vertexIndex = 0; vertexIndex < 6; vertexIndex++)
+                {
+                    hex[vertexIndex] = relativeVertexHeights[vertexIndex] + (int)Math.Floor(tileHeight);
+                }
+                hexes[position] = hex;
+            }
+
+            foreach(AxialPosition position in hexes.Keys)
+            {
+                Hexes[position] = new Hex(new Vertex[6]);
+                for(int vertexIndex = 0; vertexIndex < 6; vertexIndex++)
+                {
+                    AxialPosition vPosition =
+                        GridUtilities.GetVertexPositionForHexV(position, vertexIndex);
+                    int vHeight = hexes[position][vertexIndex];
+                    Hexes[position].Verts[vertexIndex] = new Vertex(vPosition, vHeight);
+                }
+            }
+        }
+
 		public Vertex? FindExistingVertexForHexV(AxialPosition hexPosition, int vIndex)
 		{
 			AxialPosition vertexPosition = GridUtilities.GetVertexPositionForHexV(hexPosition, vIndex);
