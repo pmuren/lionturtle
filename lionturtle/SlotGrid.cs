@@ -10,7 +10,7 @@ public class SlotGrid
 
 	Queue<(Module, AxialPosition)> ModuleRemovalQueue = new Queue<(Module, AxialPosition)>();
 
-	int numRings = 160;
+	int numRings = 80;
 
     public SlotGrid()
 	{
@@ -202,4 +202,149 @@ public class SlotGrid
         return stepHeight;
     }
 
+    public VertexType[] GetEdgeVertexTypesForHex(AxialPosition hPosition)
+    {
+        var vertexTypes = new VertexType[6];
+        for (int i = 0; i < 6; i++)
+        {
+            var neighborDirection = Constants.axial_directions[i];
+            var neighborPosition = hPosition + neighborDirection;
+
+            if (!Slots.ContainsKey(neighborPosition))
+            {
+                vertexTypes[i] = VertexType.Unknown;
+                continue;
+            }
+
+            var homeModule = Slots[hPosition].modules.First();
+            var remoteModule = Slots[neighborPosition].modules.First();
+
+            vertexTypes[i] = VertexType.Slope;
+
+            if (homeModule == DataGenerator.allModules[0] && remoteModule == DataGenerator.allModules[0])
+            {
+                vertexTypes[i] = VertexType.Flat;
+                continue;
+            }
+            if (homeModule == DataGenerator.allModules[0]) // home is flat
+            {
+                if (remoteModule.GetConnectorArray()[(i+3)%6].Charge == 1)
+                    vertexTypes[i] = VertexType.Crest;
+                else if (remoteModule.GetConnectorArray()[(i + 3) % 6].Charge == -1)
+                    vertexTypes[i] = VertexType.Foot;
+                continue;
+            }
+            if(remoteModule == DataGenerator.allModules[0]) // remote is flat
+            {
+                if (homeModule.GetConnectorArray()[i].Charge == 1)
+                    vertexTypes[i] = VertexType.Crest;
+                else if (homeModule.GetConnectorArray()[i].Charge == -1)
+                    vertexTypes[i] = VertexType.Foot;
+                continue;
+            }
+        }
+        return vertexTypes;
+    }
+
+    public VertexType[] GetCornerVertexTypesForHex(AxialPosition hPosition)
+    {
+        var vertexTypes = new VertexType[6];
+        for(int i = 0; i < 6; i++)
+        {
+            var vPosition = GridUtilities.GetVertexPositionForHexV(hPosition, i);
+            vertexTypes[i] = GetCornerVertexType(vPosition);
+        }
+        return vertexTypes;
+    }
+
+    public VertexType GetCornerVertexType(AxialPosition position)
+    {
+        AxialPosition[] hexPositions = new AxialPosition[3];
+        if (GridUtilities.VertexPointsUp(position))
+        {
+            //(+2, -1), (-1, -1), (-1, +2)
+            hexPositions[0] = (position + new AxialPosition(+2, -1)) / 3;
+            hexPositions[1] = (position + new AxialPosition(-1, -1)) / 3;
+            hexPositions[2] = (position + new AxialPosition(-1, +2)) / 3;
+        }
+        else
+        {
+            //(+1, -2), (-2, +1), (+1, +1)
+            hexPositions[0] = (position + new AxialPosition(+1, -2)) / 3;
+            hexPositions[1] = (position + new AxialPosition(-2, +1)) / 3;
+            hexPositions[2] = (position + new AxialPosition(+1, +1)) / 3;
+        }
+
+        foreach(AxialPosition hexPosition in hexPositions)
+        {
+            if (!Slots.ContainsKey(hexPosition)) return VertexType.Unknown;
+        }
+
+        Module[] modules = new Module[]
+        {
+            Slots[hexPositions[0]].modules.First(),
+            Slots[hexPositions[1]].modules.First(),
+            Slots[hexPositions[2]].modules.First(),
+        };
+
+        if (modules[0] == DataGenerator.allModules[0]
+            && modules[1] == DataGenerator.allModules[0]
+            && modules[2] == DataGenerator.allModules[0])
+        {
+            return VertexType.Flat; //all flats -> Flat
+        }
+
+        if (modules[0] != DataGenerator.allModules[0]
+            && modules[1] != DataGenerator.allModules[0]
+            && modules[2] != DataGenerator.allModules[0])
+        {
+            return VertexType.Slope; //no flats -> Slope
+        }
+
+        VertexType vertexType = VertexType.Unknown;
+
+        // the rest of the owl, some flats -> ?
+
+        //for each of 3 modules
+        // if I'm flat
+        // if I step up in to any neighbors
+        // it's a foot
+        // if I step down into any neighbors
+        // it's a crest!
+        // and if it's both
+        // it's a crestfoot!
+
+        for(int i = 0; i < 3; i++)
+        {
+            int directionToRight = Array.IndexOf(Constants.axial_directions, hexPositions[(i + 1) % 3] - hexPositions[i] );
+            //Connector homeRightConnector = modules[i].GetConnectorArray()[directionToRight];
+            Connector rightLeftConnector = modules[(i + 1) % 3].GetConnectorArray()[(directionToRight + 3) % 6];
+
+            int directionToLeft = Array.IndexOf(Constants.axial_directions, hexPositions[(i + 2) % 3] - hexPositions[i]);
+            //Connector homeLeftConnector = modules[i].GetConnectorArray()[directionToLeft];
+            Connector leftRightConnector = modules[(i + 2) % 3].GetConnectorArray()[(directionToLeft + 3) % 6];
+
+            bool crest = false;
+            bool foot = false;
+
+            if(rightLeftConnector.Charge == 1 || leftRightConnector.Charge == 1)
+            {
+                crest = true;
+                vertexType = VertexType.Crest;
+            }
+
+            if(rightLeftConnector.Charge == -1 || leftRightConnector.Charge == -1)
+            {
+                foot = true;
+                vertexType = VertexType.Foot;
+            }
+
+            if(crest && foot)
+            {
+                return VertexType.FootCrest;
+            }
+        }
+
+        return vertexType;
+    }
 }

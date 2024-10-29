@@ -21,14 +21,14 @@ namespace lionturtle
         //TODO: Put this somewhere else!
         public void Populate()
         {
-            SlotGrid grid = new SlotGrid();
-            grid.CollapseEverything();
+            SlotGrid slotGrid = new SlotGrid();
+            slotGrid.CollapseEverything();
 
             var hexes = new Dictionary<AxialPosition, int[]>();
-            foreach (AxialPosition position in grid.Slots.Keys)
+            foreach (AxialPosition position in slotGrid.Slots.Keys)
             {
-                var tileHeight = grid.TileHeights[position];
-                var relativeVertexHeights = grid.Slots[position].modules.First().GetRelativeVertexHeights();
+                var tileHeight = slotGrid.TileHeights[position];
+                var relativeVertexHeights = slotGrid.Slots[position].modules.First().GetRelativeVertexHeights();
                 int[] hex = new int[6];
                 for (int vertexIndex = 0; vertexIndex < 6; vertexIndex++)
                 {
@@ -37,16 +37,31 @@ namespace lionturtle
                 hexes[position] = hex;
             }
 
-            foreach(AxialPosition position in hexes.Keys)
+            foreach (AxialPosition position in hexes.Keys)
             {
-                Hexes[position] = new Hex(new Vertex[6]);
-                for(int vertexIndex = 0; vertexIndex < 6; vertexIndex++)
+                Hexes[position] = new Hex(new Vertex[6], new VertexType[6]);
+                for (int vertexIndex = 0; vertexIndex < 6; vertexIndex++)
                 {
                     AxialPosition vPosition =
                         GridUtilities.GetVertexPositionForHexV(position, vertexIndex);
                     int vHeight = hexes[position][vertexIndex];
-                    Hexes[position].Verts[vertexIndex] = new Vertex(vPosition, vHeight);
+                    Vertex currentVertex;
+                    if (!Vertices.ContainsKey(vPosition))
+                    {
+                        currentVertex = new Vertex(vPosition, vHeight);
+                    }
+                    else
+                    {
+                        currentVertex = Vertices[vPosition];
+                    }
+                    Hexes[position].Verts[vertexIndex] = currentVertex;
+                    Vertices[vPosition] = currentVertex;
                 }
+            }
+
+            foreach( AxialPosition position in Vertices.Keys)
+            {
+                Vertices[position].type = slotGrid.GetCornerVertexType(position);
             }
         }
 
@@ -92,7 +107,14 @@ namespace lionturtle
                 }
 			}
 
-            Hex newHex = new(verts);
+            Hex newHex = new(verts, new VertexType[] {
+                VertexType.Unknown,
+                VertexType.Unknown,
+                VertexType.Unknown,
+                VertexType.Unknown,
+                VertexType.Unknown,
+                VertexType.Unknown
+            });
             Hexes[position] = newHex;
         }
 
@@ -116,7 +138,14 @@ namespace lionturtle
                 }
             }
 
-            Hex newHex = new(verts);
+            Hex newHex = new(verts, new VertexType[] {
+                VertexType.Unknown,
+                VertexType.Unknown,
+                VertexType.Unknown,
+                VertexType.Unknown,
+                VertexType.Unknown,
+                VertexType.Unknown
+            });
             Hexes[position] = newHex;
         }
 
@@ -300,6 +329,15 @@ namespace lionturtle
                         stringHex += $"{hex.Verts[j].height}, ";
                     else
                         stringHex += $"{hex.Verts[j].height}])";
+                }
+
+                stringHex += $"], [";
+                for (int j = 0; j < hex.Verts.Length; j++)
+                {
+                    if (j < hex.Verts.Length - 1)
+                        stringHex += $"{hex.VertexTypes[j]}, ";
+                    else
+                        stringHex += $"{hex.VertexTypes[j]}])";
                 }
 
                 stringHexes += stringHex;

@@ -1,5 +1,6 @@
 ﻿using lionturtle;
 using System.Diagnostics;
+using System.Numerics;
 
 namespace lionturtle_test
 {
@@ -8,28 +9,28 @@ namespace lionturtle_test
         [Fact]
         public void Data_Playground()
         {
-            //var allModules = DataGenerator.GenerateAllModules();
+            //var allModules = DataGenerator.allModules;
 
-            SlotGrid grid = new SlotGrid();
-            grid.CollapseEverything();
+            //SlotGrid grid = new SlotGrid();
+            //grid.CollapseEverything();
 
-            var hexes = new Dictionary<AxialPosition, int[]>();
-            foreach(AxialPosition position in grid.Slots.Keys)
-            {
-                var tileHeight = grid.TileHeights[position];
-                var relativeVertexHeights = grid.Slots[position].modules.First().GetRelativeVertexHeights();
-                int[] hex = new int[6];
-                for(int vertexIndex = 0; vertexIndex < 6; vertexIndex++)
-                {
-                    hex[vertexIndex] = relativeVertexHeights[vertexIndex] + (int)Math.Floor(tileHeight);
-                }
-                hexes[position] = hex;
-            }
+            //var hexes = new Dictionary<AxialPosition, int[]>();
+            //foreach(AxialPosition position in grid.Slots.Keys)
+            //{
+            //    var tileHeight = grid.TileHeights[position];
+            //    var relativeVertexHeights = grid.Slots[position].modules.First().GetRelativeVertexHeights();
+            //    int[] hex = new int[6];
+            //    for(int vertexIndex = 0; vertexIndex < 6; vertexIndex++)
+            //    {
+            //        hex[vertexIndex] = relativeVertexHeights[vertexIndex] + (int)Math.Floor(tileHeight);
+            //    }
+            //    hexes[position] = hex;
+            //}
 
-            var differentGrid = new HexGrid();
-            differentGrid.Populate();
-            var hexesString = differentGrid.GetStringHexes();
-            Debug.Write(hexesString);
+            //var hexGrid = new HexGrid();
+            //hexGrid.Populate();
+            //var hexesString = hexGrid.GetStringHexes();
+            //Debug.Write(hexesString);
 
             //bool allGood = grid.ValidateAllSlots();
             //Debug.Write(allGood);
@@ -42,6 +43,125 @@ namespace lionturtle_test
             //Debug.Write(relativeVertexGroups);
 
 
+            //the trick here is to get the hexType and rotation from the slotGrid data . . .
+            //I'm half-way to doing this in LandMesh.cs (Godot)
+            //var vertices24 = DataGenerator.GenerateV24Vertices(2, 1);
+            //vertices24 = DataGenerator.PopulateVertexTypes(vertices24, 2, new VertexType[]
+            //{
+            //    VertexType.Slope, VertexType.Crest, VertexType.FootCrest,
+            //    VertexType.Slope, VertexType.Slope, VertexType.Slope
+            //}, new VertexType[]
+            //{
+            //    VertexType.Slope, VertexType.Crest, VertexType.Slope,
+            //    VertexType.Slope, VertexType.Slope, VertexType.Slope
+            //});
+
+            //Debug.Write(vertices24);
+
+
+            Dictionary<AxialPosition, Vertex> Vertices = new();
+            Dictionary<AxialPosition, Hex> Hexes = new();
+
+            SlotGrid slotGrid = new SlotGrid();
+            slotGrid.CollapseEverything();
+
+            var hexPositionToVertHeights = new Dictionary<AxialPosition, int[]>();
+            foreach (AxialPosition position in slotGrid.Slots.Keys)
+            {
+                var tileHeight = slotGrid.TileHeights[position];
+                var relativeVertexHeights = slotGrid.Slots[position].modules.First().GetRelativeVertexHeights();
+                int[] hex = new int[6];
+                for (int vertexIndex = 0; vertexIndex < 6; vertexIndex++)
+                {
+                    hex[vertexIndex] = relativeVertexHeights[vertexIndex] + (int)Math.Floor(tileHeight);
+                }
+                hexPositionToVertHeights[position] = hex;
+            }
+
+            foreach (AxialPosition position in hexPositionToVertHeights.Keys)
+            {
+                Hexes[position] = new Hex(new Vertex[6], new VertexType[6]);
+                for (int vertexIndex = 0; vertexIndex < 6; vertexIndex++)
+                {
+                    AxialPosition vPosition =
+                        GridUtilities.GetVertexPositionForHexV(position, vertexIndex);
+                    int vHeight = hexPositionToVertHeights[position][vertexIndex];
+                    Vertex currentVertex;
+                    if (!Vertices.ContainsKey(vPosition))
+                    {
+                        currentVertex = new Vertex(vPosition, vHeight);
+                    }
+                    else
+                    {
+                        currentVertex = Vertices[vPosition];
+                    }
+                    Hexes[position].Verts[vertexIndex] = currentVertex;
+                    Vertices[vPosition] = currentVertex;
+                }
+            }
+
+            //foreach( AxialPosition position in Vertices.Keys)
+            //{
+            //Vertices[position].type = slotGrid.GetVertexType(position);
+            //}
+
+            foreach (AxialPosition position in slotGrid.Slots.Keys)
+            {
+                var module = slotGrid.Slots[position].modules.First();
+                var relativeVerts = module.GetRelativeVertexHeights();
+
+                int hexType = 0;
+                int rotation = 0;
+                for (int direction = 0; direction < 6; direction++)
+                {
+                    if (relativeVerts[direction] == 1)
+                    {
+                        if (rotation == 0) rotation = direction;
+                        hexType++;
+                    }
+                }
+
+                var cornerVertexTypes = slotGrid.GetCornerVertexTypesForHex(position);
+                var edgeVertexTypes = slotGrid.GetEdgeVertexTypesForHex(position);
+
+                var vertices24 = DataGenerator.GenerateV24Vertices(hexType, rotation);
+                vertices24 = DataGenerator.PopulateVertexTypes(
+                    vertices24,
+                    hexType,
+                    cornerVertexTypes,
+                    edgeVertexTypes
+                );
+
+                //Now IN THEORY we just need to bundle these vertices into
+                //triangles and create geometry out of them!
+                //oh right, and I gotta add absolute heights & positions to the rels
+
+                var triangleGroups = DataGenerator.triangleCoordinateGroups;
+                foreach (AxialPosition[] triangleGroup in triangleGroups)
+                {
+                    var v0 = vertices24[triangleGroup[0]];
+                    var v1 = vertices24[triangleGroup[1]];
+                    var v2 = vertices24[triangleGroup[2]];
+
+                    var v0AbsHeight = v0.height + slotGrid.TileHeights[position];
+                    var v1AbsHeight = v1.height + slotGrid.TileHeights[position];
+                    var v2AbsHeight = v2.height + slotGrid.TileHeights[position];
+
+                    AxialPosition v0AbsPos6 = triangleGroup[0] + position * 6;
+                    AxialPosition v1AbsPos6 = triangleGroup[1] + position * 6;
+                    AxialPosition v2AbsPos6 = triangleGroup[2] + position * 6;
+
+                    var v0AbsPosCartesian6 = GridUtilities.AxialPositionToVec2(v0AbsPos6);
+                    var v0AbsPosXYZ = new Vector3((float)v0AbsPosCartesian6.X/6, (float)v0AbsPosCartesian6.Y/6, (float)v0AbsHeight);
+
+                    var v1AbsPosCartesian6 = GridUtilities.AxialPositionToVec2(v1AbsPos6);
+                    var v1AbsPosXYZ = new Vector3((float)v1AbsPosCartesian6.X/6, (float)v1AbsPosCartesian6.Y/6, (float)v1AbsHeight);
+
+                    var v2AbsPosCartesian6 = GridUtilities.AxialPositionToVec2(v2AbsPos6);
+                    var v2AbsPosXYZ = new Vector3((float)v2AbsPosCartesian6.X/6, (float)v2AbsPosCartesian6.Y/6, (float)v2AbsHeight);
+                }
+            }
+            Debug.Write(Vertices);
         }
 
         [Fact]

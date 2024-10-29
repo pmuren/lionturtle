@@ -33,6 +33,5 @@ public record struct Connector(string Color, int Charge)
         if (colorA == "white" || colorB == "white") return true;
         if (colorA == colorB && (colorA == "blue" || colorA == "green")) return true;
         return false;
-
     }
 }

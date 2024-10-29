@@ -11,5 +11,15 @@
         {
             return new AxialPosition(a.Q - b.Q, a.R - b.R);
         }
+
+        public static AxialPosition operator *(AxialPosition a, int scalar)
+        {
+            return new AxialPosition(a.Q * scalar, a.R * scalar);
+        }
+
+        public static AxialPosition operator /(AxialPosition a, int scalar)
+        {
+            return new AxialPosition(a.Q / scalar, a.R / scalar);
+        }
     }
 }
