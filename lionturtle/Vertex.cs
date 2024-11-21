@@ -1,16 +1,26 @@
-﻿namespace lionturtle
+﻿using System.Numerics;
+
+namespace lionturtle
 {
 	public class Vertex
 	{
-		public AxialPosition position { get; set; }
-		public double height;
-		public VertexType type { get; set; }
+		public double Height;
+		public VertexType Type { get; set; }
 
-        public Vertex(AxialPosition inPosition, double inHeight, VertexType inType = VertexType.Unknown)
+        public Vertex(double height, VertexType type = VertexType.Unknown)
 		{
-			position = inPosition;
-			height = inHeight;
-			type = inType;
+			Height = height;
+			Type = type;
         }
 	}
+}
+
+public enum VertexType
+{
+    Crest,
+    Foot,
+    Slope,
+    Flat,
+    Unknown,
+    FootCrest
 }

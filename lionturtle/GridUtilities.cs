@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Numerics;
 using System.Text.RegularExpressions;
 
 namespace lionturtle
@@ -18,7 +19,7 @@ namespace lionturtle
 
         public static AxialPosition[] GetVertexPositionsFromHexPosiiton(AxialPosition hexPosition)
         {
-            AxialPosition[] directions = Constants.axial_directions;
+            AxialPosition[] directions = Constants.axialDirections;
 
             AxialPosition[] vPositions = new AxialPosition[6];
             for (int i = 0; i < vPositions.Length; i++)
@@ -32,7 +33,7 @@ namespace lionturtle
 
         public static AxialPosition GetVertexPositionForHexV(AxialPosition hexPosition, int vIndex)
         {
-            AxialPosition[] directions = Constants.axial_directions;
+            AxialPosition[] directions = Constants.axialDirections;
 
             AxialPosition n0Position = hexPosition + directions[(vIndex + 0) % 6];
             AxialPosition n1Position = hexPosition + directions[(vIndex + 1) % 6];
@@ -40,11 +41,11 @@ namespace lionturtle
             return hexPosition + n0Position + n1Position;
         }
 
-        public static Vec2 AxialPositionToVec2(AxialPosition axial)
+        public static Vector2 AxialPositionToVec2(AxialPosition axial)
         {
             double x = (Math.Sqrt(3) * axial.Q + Math.Sqrt(3) / 2 * axial.R);
             double y = (3.0 / 2 * axial.R * -1);
-            return new Vec2(x, y);
+            return new Vector2((float)x, (float)y);
         }
 
         public static VertexGroup[] GetVertexGroups(AxialPosition primaryVertexPosition)

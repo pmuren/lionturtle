@@ -36,6 +36,16 @@ public class Slot
 				supportedModules[direction][supportedModule].Add(newModule);
 			}
 		}
+
+		//newly supported modules???????????????????????
+		//	if the slot already existed but did not support something in a neighbor
+		//	that neighbor should learn about it
+		//	but don't we only add modules right at creation time?
+
+		//testing plan
+		//	build up
+		//	break down
+		//	dendrites
 	}
 
     public List<Module>[] RemoveModule(Module oldModule)

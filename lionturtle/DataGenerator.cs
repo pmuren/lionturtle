@@ -126,12 +126,6 @@ public static class DataGenerator
 
         AxialPosition[] cornerAxials = dualDirections.Select((direction) => direction * 2).ToArray();
 
-        //   Vector3[][] vertexRings = new Vector3[3][]{
-        //       new Vector3[1], //rotate none
-        // new Vector3[6], //rotate by 1
-        // new Vector3[12]  //rotate by 2
-        //};
-
         AxialPosition[][] vertexRings = new AxialPosition[3][]{
             new AxialPosition[1], //rotate none
 		    new AxialPosition[6], //rotate by 1
@@ -156,8 +150,6 @@ public static class DataGenerator
         }
 
         Dictionary<AxialPosition, Vertex> vertices24 = new();
-
-        //Vector3[] v24Positions = vertexRings.SelectMany(v => v).ToArray(); //flatten
 
         Dictionary<int, float[][]> heightsForTypes = new Dictionary<int, float[][]>{
             {0, new float[3][]{
@@ -184,13 +176,13 @@ public static class DataGenerator
 
         AxialPosition position = new AxialPosition(0, 0);
         var heightRings = heightsForTypes[hexType];
-        vertices24.Add(position, new Vertex(position, heightRings[0][0]));
+        vertices24.Add(position, new Vertex(heightRings[0][0]));
 
         position = dualDirections[0];
         for (int i = 0; i < 6; i++)
         {
             int rotatedIndex = (i + hexRotation) % 6;
-            vertices24.Add(position, new Vertex(position, heightRings[1][rotatedIndex]));
+            vertices24.Add(position, new Vertex(heightRings[1][rotatedIndex]));
 
             position += dualDirections[(i + 2) % 6];
         }
@@ -200,99 +192,28 @@ public static class DataGenerator
         {
             int rotatedIndex = (i + hexRotation * 2) % 12;
 
-            vertices24.Add(position, new Vertex(position, heightRings[2][rotatedIndex]));
+            vertices24.Add(position, new Vertex(heightRings[2][rotatedIndex]));
 
             position += dualDirections[((i / 2) + 2) % 6];
         }
 
         return vertices24;
-
-        //Inner triangles
-        //a0, b0, b1
-        //a0, b1, b2
-        //a0, b2, b3
-        //a0, b3, b4
-        //a0, b4, b5
-        //a0, b5, b0
-
-        //List<Vector3[]> triangles = new List<Vector3[]>
-        //{
-        //    //inner triangles
-        //    new Vector3[]{
-        //        vertexRings[0][0], vertexRings[1][0], vertexRings[1][1]
-        //    },
-        //    new Vector3[]{
-        //        vertexRings[0][0], vertexRings[1][1], vertexRings[1][2]
-        //    },
-        //    new Vector3[]{
-        //        vertexRings[0][0], vertexRings[1][2], vertexRings[1][3]
-        //    },
-        //    new Vector3[]{
-        //        vertexRings[0][0], vertexRings[1][3], vertexRings[1][4]
-        //    },
-        //    new Vector3[]{
-        //        vertexRings[0][0], vertexRings[1][4], vertexRings[1][5]
-        //    },
-        //    new Vector3[]{
-        //        vertexRings[0][0], vertexRings[1][5], vertexRings[1][0]
-        //    }
-        //};
-
-        //for (int i = 0; i < 6; i++)
-        //{
-        //    triangles.Add(new Vector3[]
-        //    {
-        //        vertexRings[1][i], vertexRings[2][i*2], vertexRings[2][i*2+1]
-        //    });
-        //    triangles.Add(new Vector3[]
-        //    {
-        //        vertexRings[1][i], vertexRings[2][i*2+1], vertexRings[1][(i+1)%6]
-        //    });
-        //    triangles.Add(new Vector3[]
-        //    {
-        //        vertexRings[1][(i+1)%6], vertexRings[2][i*2+1], vertexRings[2][(i*2+2)%12]
-        //    });
-        //}
-
-        //Outer Triangles
-        //b0, c0, c1
-        //    b0, c1, b1
-        //        b1, c1, c2
-
-        //b1, c2, c3
-        //    b1, c3, b2
-        //        b2, c3, c4
-
-        //b2, c4, c5
-        //    b2, c5, b3
-        //        b3, c5, c6
-
-        //b3, c6, c7
-        //    b3, c7, b4
-        //        b4, c7, c8
-
-        //b4, c8, c9
-        //    b4, c9, b5
-        //        b5, c9, c10
-
-        //b5, c10, c11
-        //    b5, c11, b0
-        //        b0, c11, c0
     }
 
-    public static Dictionary<AxialPosition, Vertex> PopulateVertexTypes(
-        Dictionary<AxialPosition, Vertex> vertices24,
+    public static Dictionary<AxialPosition, VertexType> GetVertexTypes24(
         int hexType,
         VertexType[] cornerTypes,
         VertexType[] edgeTypes
     )
     {
+        Dictionary<AxialPosition, VertexType> types24 = new();
+
         VertexType defaultType = hexType == 0 ? VertexType.Flat : VertexType.Slope;
 
-        vertices24[new AxialPosition(0, 0)].type = defaultType;
+        types24[new AxialPosition(0, 0)] = defaultType;
         for(int i = 0; i < 6; i++)
         {
-            vertices24[Constants.dualDirections[i]].type = defaultType;
+            types24[Constants.dualDirections[i]] = defaultType;
         }
 
         AxialPosition position = Constants.dualDirections[0] * 2; //top right corner
@@ -300,16 +221,16 @@ public static class DataGenerator
         {
             if(i % 2 == 0) //corner
             {
-                vertices24[position].type = cornerTypes[i / 2];
+                types24[position] = cornerTypes[i / 2];
             }
-            else
+            else //edge
             {
-                vertices24[position].type = edgeTypes[((i+2) / 2)%6];
+                types24[position] = edgeTypes[((i+2) / 2)%6];
             }
             position += Constants.dualDirections[(i/2 + 2)%6];
         }
 
-        return vertices24;
+        return types24;
     }
 
     public static List<AxialPosition[]> GenerateTriangleCoordinateGroups()

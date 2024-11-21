@@ -3,25 +3,6 @@ using System.Xml.Linq;
 
 namespace lionturtle
 {
-    //public record struct Module(Connector[] Connectors)
-    //{
-    //    public Module GetRotated(int direction) //110000 -> 011000
-    //    {
-    //        Connector[] rotated = new Connector[6];
-    //        for (int i = 0; i < 6; i++)
-    //        {
-    //            rotated[i] = Connectors[(i + direction + 6) % 6];
-    //        }
-    //        return new Module(rotated);
-    //    }
-
-    //    public bool Supports(Module remoteModule, int direction)
-    //    {
-    //        if (Connectors[direction].ConnectsWith(remoteModule.Connectors[(direction + 3) % 6])) return true;
-    //        else return false;
-    //    }
-    //}
-
     public record Module(
         Connector connector0,
         Connector connector1,
