@@ -66,11 +66,20 @@ public class SlotGrid
         }
     }
 
-    public Module TryCollapseAndHandleQueue(AxialPosition position)
+    public void TryCollapseAndHandleQueue(AxialPosition position, Module selectedModule)
     {
-        Module resultantModule = CollapseSlotAtPosition(position);
+        //Module resultantModule = CollapseSlotAtPosition(position);
+        CollapseSlotToModule(position, selectedModule);
         HandleQueue();
-        return resultantModule;
+        //return resultantModule;
+    }
+
+    private void CollapseSlotToModule(AxialPosition position, Module selectedModule)
+    {
+        foreach (Module module in Slots[position].modules)
+        {
+            if (module != selectedModule) ModuleRemovalQueue.Enqueue((module, position));
+        }
     }
 
 	private Module CollapseSlotAtPosition(AxialPosition position)
@@ -353,6 +362,7 @@ public class SlotGrid
         while (true)
         {
             List<Module> supportedModules = GatherSupportedModules(headPosition);
+
             Slots.Add(headPosition, new Slot(supportedModules));
             SettleNeighborsAndPropagate(headPosition);
 

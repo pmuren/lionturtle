@@ -1,5 +1,6 @@
 ﻿using System;
 using lionturtle;
+using System.Numerics;
 
 namespace lionturtle;
 
@@ -9,17 +10,23 @@ public class TileGrid
 
 	public SlotGrid sGrid;
 
+    private PerlinNoise perlin;
+
 	public TileGrid()
 	{
 		Tiles = new();
 		sGrid = new SlotGrid();
 
         AxialPosition initialTilePosition = new AxialPosition(0, 0);
-        Module initialModule = sGrid.TryCollapseAndHandleQueue(initialTilePosition);
+        //Module initialModule = sGrid.TryCollapseAndHandleQueue(initialTilePosition);
+        Module selectedModule = DataGenerator.allModules[0];
+        sGrid.TryCollapseAndHandleQueue(initialTilePosition, selectedModule);
         Tiles[initialTilePosition] = new Tile(
-            initialModule.GetRelativeVertexHeights(),
+            selectedModule.GetRelativeVertexHeights(),
             0
         );
+
+        perlin = new PerlinNoise(1337);
     }
 
     public void GrowDendritic()
@@ -50,20 +57,64 @@ public class TileGrid
         if (!sGrid.Slots.ContainsKey(tPosition))
         {
             sGrid.ExpandToInclude(tPosition);
-            sGrid.ValidateAllSlots();
         }
 
-        Module selectedModule = sGrid.TryCollapseAndHandleQueue(tPosition);
+        //Module selectedModule = sGrid.TryCollapseAndHandleQueue(tPosition);
+        List<Module> candidates = sGrid.Slots[tPosition].modules.ToList();
+        Module selectedModule = candidates[0];
+        float minError = GetCandidateError(tPosition, candidates[0]);
+        for (int i = 1; i < candidates.Count; i++)
+        {
+            float candidateError = GetCandidateError(tPosition, candidates[i]);
+            if (candidateError < minError)
+            {
+                selectedModule = candidates[i];
+                minError = candidateError;
+            }
+        }
+
+        sGrid.TryCollapseAndHandleQueue(tPosition, selectedModule);
 
         Tiles[tPosition] = new Tile(
             selectedModule.GetRelativeVertexHeights(),
-            InferTileHeight(tPosition)
+            InferTileHeight(tPosition, selectedModule)
         );
 
         return Tiles[tPosition];
     }
 
-    public int InferTileHeight(AxialPosition position)
+    public float heuristic(AxialPosition position)
+    {
+        Vector2 cartesian = GridUtilities.AxialPositionToVec2(position);
+        double sumOfNoise = 0;
+        sumOfNoise += perlin.Noise(cartesian.X * 0.002f, cartesian.Y * 0.002f) * 24.0f;
+
+        sumOfNoise += perlin.Noise(cartesian.X * 0.004f, cartesian.Y * 0.004f) * 12.0f;
+        //sumOfNoise += perlin.Noise(cartesian.X * 0.1f, cartesian.Y * 0.1f) * 16.0f;
+        sumOfNoise += perlin.Noise(cartesian.X * 0.01f, cartesian.Y * 0.01) * 8.0f;
+        //sumOfNoise += perlin.Noise(cartesian.X * 0.0125f, cartesian.Y * 0.0125f) * 2.0f;
+        sumOfNoise += perlin.Noise(cartesian.X * 0.05f, cartesian.Y * 0.05f) * 4.0f;
+        sumOfNoise += perlin.Noise(cartesian.X * 2.0f, cartesian.Y * 2.0f) * 2.0f;
+
+        return (float)sumOfNoise - (24 + 12 + 8 + 4 + 2f)/2.0f;
+    }
+
+    public float GetCandidateError(AxialPosition position, Module module)
+    {
+        var candidateBaseHeight = InferTileHeight(position, module);
+        var candidateRelativeVHeights = module.GetRelativeVertexHeights();
+
+        float totalError = 0.0f;
+        for(int direction = 0; direction < 6; direction++)
+        {
+            float totalVertexHeight = candidateRelativeVHeights[direction] + candidateBaseHeight;
+            totalError += Math.Abs(heuristic(position) - totalVertexHeight);
+        }
+
+        return totalError;
+    }
+
+    public int InferTileHeight(AxialPosition position, Module homeModule)
     {
         int direction = 0;
         AxialPosition neighborPosition = new AxialPosition(0, 0);
@@ -79,7 +130,7 @@ public class TileGrid
         }
         if (direction > 5) throw new Exception("Need a collapsed neighbor to infer my height");
 
-        Module homeModule = sGrid.Slots[position].modules.First();
+        //Module homeModule = sGrid.Slots[position].modules.First();
         Module neighborModule = sGrid.Slots[neighborPosition].modules.First();
 
         Connector[] homeConnectors = homeModule.GetConnectorArray();

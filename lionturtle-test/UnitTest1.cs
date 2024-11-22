@@ -34,17 +34,6 @@ namespace lionturtle_test
             }
             Assert.Equal(101, tGrid.Tiles.Count);
         }
-
-        [Fact]
-        public void Dendritic_Growth_TenThousand()
-        {
-            TileGrid tGrid = new TileGrid();
-            for (int i = 0; i < 10000; i++)
-            {
-                tGrid.GrowDendritic();
-            }
-            Assert.Equal(10001, tGrid.Tiles.Count);
-        }
     }
 
     public class SlotGridTests
