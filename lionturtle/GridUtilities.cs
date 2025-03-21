@@ -48,6 +48,51 @@ namespace lionturtle
             return new Vector2((float)x, (float)y);
         }
 
+        public static Vector2 AxialRound(Vector2 fractionalAxial)
+        {
+            float fractionalQ = fractionalAxial.X;
+            float fractionalR = fractionalAxial.Y;
+            float fractionalS = 0.0f - fractionalQ - fractionalR;
+
+            float whole_q = (float)Math.Round(fractionalQ);
+            float whole_r = (float)Math.Round(fractionalR);
+            float whole_s = (float)Math.Round(fractionalS);
+
+            float q_diff = Math.Abs(fractionalQ - whole_q);
+            float r_diff = Math.Abs(fractionalR - whole_r);
+            float s_diff = Math.Abs(fractionalS - whole_s);
+
+            float q = whole_q;
+            float r = whole_r;
+            if (q_diff > r_diff && q_diff > s_diff)
+                q = -whole_r - whole_s;
+            else if (r_diff > q_diff && r_diff > s_diff)
+                r = -whole_q - whole_s;
+
+            return new Vector2(q, r);
+        }
+
+        public static Vector2 AxialToCartesian(Vector2 axial, float grid_scale)
+        {
+            float x = (float)(Math.Sqrt(3.0) * axial.X + Math.Sqrt(3.0) / 2.0 * axial.Y) / grid_scale;
+            float y = (float)(3.0 / 2.0 * axial.Y) / grid_scale;
+
+            return new Vector2(x, y);
+        }
+
+        public static Vector2 CartesianToFractionalAxial(Vector2 cartesian, float grid_scale)
+        {
+            float q = (float)((cartesian.X / Math.Sqrt(3.0)) - (cartesian.Y / 3.0)) * grid_scale;
+            float r = (float)(2.0 * cartesian.Y / 3.0) * grid_scale;
+
+            return new Vector2(q, r);
+        }
+
+        public static Vector2 CartesianToWholeAxial(Vector2 cartesian, float grid_scale)
+        {
+            return AxialRound(CartesianToFractionalAxial(cartesian, grid_scale));
+        }
+
         public static VertexGroup[] GetVertexGroups(AxialPosition primaryVertexPosition)
         {
             if (VertexPointsUp(primaryVertexPosition))
@@ -541,118 +586,6 @@ namespace lionturtle
                 };
             }
         }
-
-        // public static CreaseVertexGroup[] GetCreaseVertexGroups(AxialPosition primaryVertexPosition)
-        // {
-        //     if (VertexPointsUp(primaryVertexPosition))
-        //     {
-        //         return new CreaseVertexGroup[]
-        //         {
-        //             new CreaseVertexGroup(
-        //                 a: new AxialPosition(-3, 0),
-        //                 mid: new AxialPosition(0, 0),
-        //                 handle: new AxialPosition(1, -2),
-        //                 b: new AxialPosition(3, 0)
-        //             ),
-        //             new CreaseVertexGroup(
-        //                 a: new AxialPosition(-2, -2),
-        //                 mid: new AxialPosition(1, -2),
-        //                 handle: new AxialPosition(0, 0),
-        //                 b: new AxialPosition(4, -2)
-        //             ),
-        //             new CreaseVertexGroup(
-        //                 a: new AxialPosition(0, 0),
-        //                 mid: new AxialPosition(3, 0),
-        //                 handle: new AxialPosition(4, -2),
-        //                 b: new AxialPosition(6, 0)
-        //             ),
-        //             new CreaseVertexGroup(
-        //                 a: new AxialPosition(0, 0),
-        //                 mid: new AxialPosition(3, -3),
-        //                 handle: new AxialPosition(4, -2),
-        //                 b: new AxialPosition(6, -6)
-        //             ),
-        //             new CreaseVertexGroup(
-        //                 a: new AxialPosition(0, 0),
-        //                 mid: new AxialPosition(0, -3),
-        //                 handle: new AxialPosition(-2, -2),
-        //                 b: new AxialPosition(0, -6)
-        //             ),
-        //             new CreaseVertexGroup(
-        //                 a: new AxialPosition(0, 0),
-        //                 mid: new AxialPosition(-3, 0),
-        //                 handle: new AxialPosition(-2, -2),
-        //                 b: new AxialPosition(-6, 0)
-        //             ),
-        //             new CreaseVertexGroup(
-        //                 a: new AxialPosition(0, 0),
-        //                 mid: new AxialPosition(-3, 3),
-        //                 handle: new AxialPosition(-2, 4),
-        //                 b: new AxialPosition(-6, 6)
-        //             ),
-        //             new CreaseVertexGroup(
-        //                 a: new AxialPosition(0, 0),
-        //                 mid: new AxialPosition(0, 3),
-        //                 handle: new AxialPosition(-2, 4),
-        //                 b: new AxialPosition(0, 6)
-        //             )
-        //         };
-        //     }
-        //     else
-        //     {
-        //         return new CreaseVertexGroup[]
-        //         {
-        //             new CreaseVertexGroup(
-        //                 a: new AxialPosition(-3, 0),
-        //                 mid: new AxialPosition(0, 0),
-        //                 handle: new AxialPosition(-1, 2),
-        //                 b: new AxialPosition(3, 0)
-        //             ),
-        //             new CreaseVertexGroup(
-        //                 a: new AxialPosition(-4, 2),
-        //                 mid: new AxialPosition(-1, 2),
-        //                 handle: new AxialPosition(0, 0),
-        //                 b: new AxialPosition(2, 2)
-        //             ),
-        //             new CreaseVertexGroup(
-        //                 a: new AxialPosition(0, 0),
-        //                 mid: new AxialPosition(3, 0),
-        //                 handle: new AxialPosition(2, 2),
-        //                 b: new AxialPosition(6, 0)
-        //             ),
-        //             new CreaseVertexGroup(
-        //                 a: new AxialPosition(0, 0),
-        //                 mid: new AxialPosition(3, -3),
-        //                 handle: new AxialPosition(2, -4),
-        //                 b: new AxialPosition(6, -6)
-        //             ),
-        //             new CreaseVertexGroup(
-        //                 a: new AxialPosition(0, 0),
-        //                 mid: new AxialPosition(0, -3),
-        //                 handle: new AxialPosition(2, -4),
-        //                 b: new AxialPosition(0, -6)
-        //             ),
-        //             new CreaseVertexGroup(
-        //                 a: new AxialPosition(0, 0),
-        //                 mid: new AxialPosition(-3, 0),
-        //                 handle: new AxialPosition(-4, 2),
-        //                 b: new AxialPosition(-6, 0)
-        //             ),
-        //             new CreaseVertexGroup(
-        //                 a: new AxialPosition(0, 0),
-        //                 mid: new AxialPosition(-3, 3),
-        //                 handle: new AxialPosition(-4, 2),
-        //                 b: new AxialPosition(-6, 6)
-        //             ),
-        //             new CreaseVertexGroup(
-        //                 a: new AxialPosition(0, 0),
-        //                 mid: new AxialPosition(0, 3),
-        //                 handle: new AxialPosition(2, 2),
-        //                 b: new AxialPosition(0, 6)
-        //             )
-        //         };
-        //     }
-        // }
     }
 
     public readonly struct VertexGroup

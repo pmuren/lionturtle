@@ -1,4 +1,5 @@
 ﻿using lionturtle;
+using System;
 using System.Diagnostics;
 using System.Numerics;
 
@@ -9,8 +10,75 @@ namespace lionturtle_test
         [Fact]
         public void Place_One()
         {
-            GeoGrid gGrid = new GeoGrid();
+            SlotGrid sGrid = new SlotGrid();
+            TileGrid tGrid = new TileGrid(sGrid);
+            GeoGrid gGrid = new GeoGrid(tGrid);
+            gGrid.AddGeo(new AxialPosition(0, 0));
             gGrid.AddGeo(new AxialPosition(0, 0) + Constants.axialDirections[0]);
+        }
+
+        [Fact]
+        public void Fill_spiral()
+        {
+            SlotGrid sGrid = new SlotGrid();
+            TileGrid tGrid = new TileGrid(sGrid);
+            GeoGrid gGrid = new GeoGrid(tGrid);
+
+            int numRings = 12;
+
+            gGrid.AddGeo(new AxialPosition(0, 0));
+            AxialPosition newGeoPosition = new AxialPosition(0, 0);
+            for (int i = 0; i < numRings; i++)
+            {
+                for (int j = 0; j < 6; j++)
+                {
+                    for (int k = 0; k < i; k++)
+                    {
+                        newGeoPosition += Constants.axialDirections[j];
+                        gGrid.AddGeo(newGeoPosition);
+                    }
+                }
+                newGeoPosition += Constants.axialDirections[4];
+            }
+        }
+
+        [Fact]
+        public void Grow_Dendritic()
+        {
+            SlotGrid sGrid = new SlotGrid();
+
+            //int slotGridSize = 50;
+            //sGrid.ExpandToInclude(new AxialPosition(slotGridSize, 0));
+            //sGrid.ExpandToInclude(new AxialPosition(0, -slotGridSize));
+            //sGrid.ExpandToInclude(new AxialPosition(-slotGridSize, slotGridSize));
+
+            TileGrid tGrid = new TileGrid(sGrid);
+            GeoGrid gGrid = new GeoGrid(tGrid);
+
+            gGrid.AddGeo(new AxialPosition(0, 0));
+
+            foreach (AxialPosition slotPosition in sGrid.Slots.Keys.ToList())
+            {
+                Slot slot = sGrid.Slots[slotPosition];
+                foreach (Module module in DataGenerator.allModules)
+                {
+                    if (!slot.modules.Contains(module))
+                    {
+                        slot.AddModule(module);
+                    }
+                }
+            }
+
+            for (int i = 0; i < 10000; i++)
+            {
+                gGrid.GrowDendritic();
+                //if (!sGrid.ValidateAllSlots())
+                //{
+                //    Debug.Write("ehhhhh");
+                //}
+            }
+
+            Debug.Write("It's working???");
         }
     }
 
@@ -19,129 +87,151 @@ namespace lionturtle_test
         [Fact]
         public void Dendritic_Growth_One()
         {
-            TileGrid tGrid = new TileGrid();
+            SlotGrid sGrid = new SlotGrid();
+            TileGrid tGrid = new TileGrid(sGrid);
             tGrid.GrowDendritic();
             Assert.Equal(2, tGrid.Tiles.Count);
         }
 
         [Fact]
-        public void Dendritic_Growth_Hundred()
+        public void Dendritic_Growth_TenThousand()
         {
-            TileGrid tGrid = new TileGrid();
-            for(int i = 0; i < 100; i++)
+            SlotGrid sGrid = new SlotGrid();
+
+            //int numRings = 40;
+            //sGrid.Slots.Add(new AxialPosition(0, 0), new Slot(DataGenerator.allModules));
+            //AxialPosition newSlotPosition = new AxialPosition(0, 0);
+            //for (int i = 0; i < numRings; i++)
+            //{
+            //    for (int j = 0; j < 6; j++)
+            //    {
+            //        for (int k = 0; k < i; k++)
+            //        {
+            //            newSlotPosition += Constants.axialDirections[j];
+            //            sGrid.Slots.Add(newSlotPosition, new Slot(DataGenerator.allModules));
+
+            //        }
+            //    }
+            //    newSlotPosition += Constants.axialDirections[4];
+            //}
+
+            TileGrid tGrid = new TileGrid(sGrid);
             {
-                tGrid.GrowDendritic();
+                for(int i = 0; i < 5000; i++)
+                {
+                    tGrid.GrowDendritic();
+                }
             }
-            Assert.Equal(101, tGrid.Tiles.Count);
+            Assert.Equal(10001, tGrid.Tiles.Count);
         }
     }
 
-    public class SlotGridTests
-    {
-        [Fact]
-        public void Gathering_Support()
-        {
-            SlotGrid sGrid = new SlotGrid();
-            AxialPosition slotAPosition = new AxialPosition(0, 0);
-            AxialPosition slotBPosition = new AxialPosition(0, 0) + Constants.axialDirections[0];
-            AxialPosition slotCPosition = new AxialPosition(0, 0) + Constants.axialDirections[1];
-            sGrid.Slots[slotAPosition] = new Slot(DataGenerator.allModules);
-            sGrid.Slots[slotBPosition] = new Slot(DataGenerator.allModules);
-            List<Module> supportedInSlotC = sGrid.GatherSupportedModules(slotCPosition);
-            Assert.Equal(19, supportedInSlotC.Count);
-        }
+    //public class SlotGridTests
+    //{
+    //    [Fact]
+    //    public void Gathering_Support()
+    //    {
+    //        SlotGrid sGrid = new SlotGrid();
+    //        AxialPosition slotAPosition = new AxialPosition(0, 0);
+    //        AxialPosition slotBPosition = new AxialPosition(0, 0) + Constants.axialDirections[0];
+    //        AxialPosition slotCPosition = new AxialPosition(0, 0) + Constants.axialDirections[1];
+    //        sGrid.Slots[slotAPosition] = new Slot(DataGenerator.allModules);
+    //        sGrid.Slots[slotBPosition] = new Slot(DataGenerator.allModules);
+    //        List<Module> supportedInSlotC = sGrid.GatherSupportedModules(slotCPosition);
+    //        Assert.Equal(19, supportedInSlotC.Count);
+    //    }
 
-        [Fact]
-        public void Gathering_Support_From_Resolved_Flat_Neighbors()
-        {
-            SlotGrid sGrid = new SlotGrid();
-            AxialPosition slotAPosition = new AxialPosition(0, 0);
-            AxialPosition slotBPosition = new AxialPosition(0, 0) + Constants.axialDirections[0];
-            AxialPosition slotCPosition = new AxialPosition(0, 0) + Constants.axialDirections[1];
-            sGrid.Slots[slotAPosition] = new Slot(new List<Module>{DataGenerator.allModules.First()});
-            sGrid.Slots[slotBPosition] = new Slot(new List<Module>{DataGenerator.allModules.First()});
-            List<Module> supportedInSlotC = sGrid.GatherSupportedModules(slotCPosition);
-            Assert.Equal(7, supportedInSlotC.Count);
-        }
+    //    [Fact]
+    //    public void Gathering_Support_From_Resolved_Flat_Neighbors()
+    //    {
+    //        SlotGrid sGrid = new SlotGrid();
+    //        AxialPosition slotAPosition = new AxialPosition(0, 0);
+    //        AxialPosition slotBPosition = new AxialPosition(0, 0) + Constants.axialDirections[0];
+    //        AxialPosition slotCPosition = new AxialPosition(0, 0) + Constants.axialDirections[1];
+    //        sGrid.Slots[slotAPosition] = new Slot(new List<Module>{DataGenerator.allModules.First()});
+    //        sGrid.Slots[slotBPosition] = new Slot(new List<Module>{DataGenerator.allModules.First()});
+    //        List<Module> supportedInSlotC = sGrid.GatherSupportedModules(slotCPosition);
+    //        Assert.Equal(7, supportedInSlotC.Count);
+    //    }
 
-        [Fact]
-        public void Expand_To_Include_One()
-        {
-            SlotGrid sGrid = new SlotGrid();
-            AxialPosition slotAPosition = new AxialPosition(0, 0);
-            sGrid.Slots[slotAPosition] = new Slot(new List<Module> { DataGenerator.allModules.First() });
-            sGrid.ExpandToInclude(new AxialPosition(0, 0) + Constants.axialDirections[0]);
+    //    [Fact]
+    //    public void Expand_To_Include_One()
+    //    {
+    //        SlotGrid sGrid = new SlotGrid();
+    //        AxialPosition slotAPosition = new AxialPosition(0, 0);
+    //        sGrid.Slots[slotAPosition] = new Slot(new List<Module> { DataGenerator.allModules.First() });
+    //        sGrid.ExpandToInclude(new AxialPosition(0, 0) + Constants.axialDirections[0]);
 
-            Assert.Equal(new List<AxialPosition> {
-                new AxialPosition(0, 0),
-                new AxialPosition(1, 0)
-            }, sGrid.Slots.Keys.ToList());
-        }
+    //        Assert.Equal(new List<AxialPosition> {
+    //            new AxialPosition(0, 0),
+    //            new AxialPosition(1, 0)
+    //        }, sGrid.Slots.Keys.ToList());
+    //    }
 
-        [Fact]
-        public void Expand_To_Include_Multiple()
-        {
-            SlotGrid sGrid = new SlotGrid();
-            AxialPosition slotAPosition = new AxialPosition(0, 0);
-            sGrid.Slots[slotAPosition] = new Slot(new List<Module> { DataGenerator.allModules.First() });
-            sGrid.ExpandToInclude(new AxialPosition(0, 0) + Constants.axialDirections[0]);
-            sGrid.ExpandToInclude(new AxialPosition(0, 0) + Constants.axialDirections[2]);
-            sGrid.ExpandToInclude(new AxialPosition(0, 0) + Constants.axialDirections[1] + Constants.axialDirections[1]);
+    //    [Fact]
+    //    public void Expand_To_Include_Multiple()
+    //    {
+    //        SlotGrid sGrid = new SlotGrid();
+    //        AxialPosition slotAPosition = new AxialPosition(0, 0);
+    //        sGrid.Slots[slotAPosition] = new Slot(new List<Module> { DataGenerator.allModules.First() });
+    //        sGrid.ExpandToInclude(new AxialPosition(0, 0) + Constants.axialDirections[0]);
+    //        sGrid.ExpandToInclude(new AxialPosition(0, 0) + Constants.axialDirections[2]);
+    //        sGrid.ExpandToInclude(new AxialPosition(0, 0) + Constants.axialDirections[1] + Constants.axialDirections[1]);
 
-            Assert.Equal(new List<AxialPosition> {
-                new AxialPosition(0, 0),
-                new AxialPosition(1, 0),
-                new AxialPosition(1, -1),
-                new AxialPosition(0, -1),
-                new AxialPosition(2, -1),
-                new AxialPosition(2, -2),
-                new AxialPosition(1, -2)
-            }, sGrid.Slots.Keys.ToList());
-        }
+    //        Assert.Equal(new List<AxialPosition> {
+    //            new AxialPosition(0, 0),
+    //            new AxialPosition(1, 0),
+    //            new AxialPosition(1, -1),
+    //            new AxialPosition(0, -1),
+    //            new AxialPosition(2, -1),
+    //            new AxialPosition(2, -2),
+    //            new AxialPosition(1, -2)
+    //        }, sGrid.Slots.Keys.ToList());
+    //    }
 
-        [Fact]
-        public void ExpandToTwoAway()
-        {
-            SlotGrid sGrid = new SlotGrid();
-            AxialPosition slotAPosition = new AxialPosition(0, 0);
-            sGrid.Slots[slotAPosition] = new Slot(new List<Module> { DataGenerator.allModules.First() });
-            sGrid.ExpandToInclude(new AxialPosition(0, 0) + Constants.axialDirections[1] + Constants.axialDirections[1]);
+    //    [Fact]
+    //    public void ExpandToTwoAway()
+    //    {
+    //        SlotGrid sGrid = new SlotGrid();
+    //        AxialPosition slotAPosition = new AxialPosition(0, 0);
+    //        sGrid.Slots[slotAPosition] = new Slot(new List<Module> { DataGenerator.allModules.First() });
+    //        sGrid.ExpandToInclude(new AxialPosition(0, 0) + Constants.axialDirections[1] + Constants.axialDirections[1]);
 
-            Assert.Equal(new List<AxialPosition> {
-                new AxialPosition(0, 0),
-                new AxialPosition(1, -1),
-                new AxialPosition(2, -2)
-            }, sGrid.Slots.Keys.ToList());
-        }
-    }
+    //        Assert.Equal(new List<AxialPosition> {
+    //            new AxialPosition(0, 0),
+    //            new AxialPosition(1, -1),
+    //            new AxialPosition(2, -2)
+    //        }, sGrid.Slots.Keys.ToList());
+    //    }
+    //}
 
-    public class ArcTests
-    {
-        [Fact]
-        public void Normalizing_Arc()
-        {
-            SlotGrid sGrid = new();
-            List<int> unsorted = new List<int> { 1, 2, 5, 0 };
-            var sorted = sGrid.NormalizeArc(unsorted);
-            Assert.Equal(new List<int> { 5, 0, 1, 2 }, sorted);
+    //public class ArcTests
+    //{
+    //    [Fact]
+    //    public void Normalizing_Arc()
+    //    {
+    //        SlotGrid sGrid = new();
+    //        List<int> unsorted = new List<int> { 1, 2, 5, 0 };
+    //        var sorted = sGrid.NormalizeArc(unsorted);
+    //        Assert.Equal(new List<int> { 5, 0, 1, 2 }, sorted);
 
-            List<int> unsorted2 = new List<int> { 0, 1, 5 };
-            var sorted2 = sGrid.NormalizeArc(unsorted2);
-            Assert.Equal(new List<int> { 5, 0, 1 }, sorted2);
+    //        List<int> unsorted2 = new List<int> { 0, 1, 5 };
+    //        var sorted2 = sGrid.NormalizeArc(unsorted2);
+    //        Assert.Equal(new List<int> { 5, 0, 1 }, sorted2);
 
-            List<int> unsorted3 = new List<int> { 0, 1, 2, 4, 5 };
-            var sorted3 = sGrid.NormalizeArc(unsorted3);
-            Assert.Equal(new List<int> { 4, 5, 0, 1, 2 }, sorted3);
+    //        List<int> unsorted3 = new List<int> { 0, 1, 2, 4, 5 };
+    //        var sorted3 = sGrid.NormalizeArc(unsorted3);
+    //        Assert.Equal(new List<int> { 4, 5, 0, 1, 2 }, sorted3);
 
-            List<int> unsorted4 = new List<int> { 1, 2, 3 };
-            var sorted4 = sGrid.NormalizeArc(unsorted4);
-            Assert.Equal(new List<int> { 1, 2, 3 }, sorted4);
+    //        List<int> unsorted4 = new List<int> { 1, 2, 3 };
+    //        var sorted4 = sGrid.NormalizeArc(unsorted4);
+    //        Assert.Equal(new List<int> { 1, 2, 3 }, sorted4);
 
-            List<int> unsorted5 = new List<int> { 3, 4, 5, 0, 1, 2 };
-            var sorted5 = sGrid.NormalizeArc(unsorted5);
-            Assert.Equal(new List<int> { 3, 4, 5, 0, 1, 2 }, sorted5);
-        }
-    }
+    //        List<int> unsorted5 = new List<int> { 3, 4, 5, 0, 1, 2 };
+    //        var sorted5 = sGrid.NormalizeArc(unsorted5);
+    //        Assert.Equal(new List<int> { 3, 4, 5, 0, 1, 2 }, sorted5);
+    //    }
+    //}
 
     public class AxialPositionTests
     {

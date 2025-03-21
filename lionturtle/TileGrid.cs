@@ -8,25 +8,29 @@ public class TileGrid
 {
 	public Dictionary<AxialPosition, Tile> Tiles;
 
-	public SlotGrid sGrid;
+	public SlotGrid SGrid;
 
     private PerlinNoise perlin;
 
-	public TileGrid()
+	public TileGrid(SlotGrid sGrid)
 	{
 		Tiles = new();
-		sGrid = new SlotGrid();
+        SGrid = sGrid;
 
         AxialPosition initialTilePosition = new AxialPosition(0, 0);
-        //Module initialModule = sGrid.TryCollapseAndHandleQueue(initialTilePosition);
-        Module selectedModule = DataGenerator.allModules[0];
-        sGrid.TryCollapseAndHandleQueue(initialTilePosition, selectedModule);
+        //Module initialModule = SGrid.CollapseSlotToModule(initialTilePosition);
+        Module selectedModule = DataGenerator.allModules.First();
+        sGrid.Slots.Add(initialTilePosition, new Slot(DataGenerator.allModules.ToHashSet()));
+        SGrid.CollapseSlotToModule(initialTilePosition, selectedModule);
         Tiles[initialTilePosition] = new Tile(
             selectedModule.GetRelativeVertexHeights(),
             0
         );
 
-        perlin = new PerlinNoise(1337);
+        Random rng = new Random();
+        int seed = rng.Next(0, 10000);
+        //perlin = new PerlinNoise(1337);
+        perlin = new PerlinNoise(seed);
     }
 
     public void GrowDendritic()
@@ -54,13 +58,13 @@ public class TileGrid
 
     public Tile AddTile(AxialPosition tPosition)
     {
-        if (!sGrid.Slots.ContainsKey(tPosition))
-        {
-            sGrid.ExpandToInclude(tPosition);
-        }
+        //if (!SGrid.Slots.ContainsKey(tPosition))
+        //{
+        //    SGrid.Slots.Add(tPosition, new Slot(DataGenerator.allModules.ToHashSet()));
+        //}
 
-        //Module selectedModule = sGrid.TryCollapseAndHandleQueue(tPosition);
-        List<Module> candidates = sGrid.Slots[tPosition].modules.ToList();
+        //List<Module> candidates = SGrid.Slots[tPosition].modules.ToList();
+        List<Module> candidates = SGrid.GetCandidates(tPosition);
         Module selectedModule = candidates[0];
         float minError = GetCandidateError(tPosition, candidates[0]);
         for (int i = 1; i < candidates.Count; i++)
@@ -73,7 +77,7 @@ public class TileGrid
             }
         }
 
-        sGrid.TryCollapseAndHandleQueue(tPosition, selectedModule);
+        SGrid.CollapseSlotToModule(tPosition, selectedModule);
 
         Tiles[tPosition] = new Tile(
             selectedModule.GetRelativeVertexHeights(),
@@ -130,8 +134,8 @@ public class TileGrid
         }
         if (direction > 5) throw new Exception("Need a collapsed neighbor to infer my height");
 
-        //Module homeModule = sGrid.Slots[position].modules.First();
-        Module neighborModule = sGrid.Slots[neighborPosition].modules.First();
+        //Module homeModule = SGrid.Slots[position].modules.First();
+        Module neighborModule = SGrid.Slots[neighborPosition].modules.First();
 
         Connector[] homeConnectors = homeModule.GetConnectorArray();
         Connector[] neighborConnectors = neighborModule.GetConnectorArray();

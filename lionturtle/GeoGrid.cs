@@ -6,7 +6,7 @@ namespace lionturtle;
 
 public class GeoGrid
 {
-    TileGrid tGrid;
+    TileGrid TGrid;
     private float heightScale;
 
     public HashSet<AxialPosition> Geos; //Hex Positions where geometry has been created. Maybe user should track this?
@@ -15,10 +15,10 @@ public class GeoGrid
     List<int> indices;
     Dictionary<AxialPosition, int> axialToIndex;
 
-    public GeoGrid()
+    public GeoGrid(TileGrid tGrid)
 	{
-		tGrid = new TileGrid();
-        heightScale = 0.44f;
+        TGrid = tGrid;
+        heightScale = 0.5f;
 
         Geos = new HashSet<AxialPosition>();
         verts = new List<GeoVert>();
@@ -26,6 +26,29 @@ public class GeoGrid
         indices = new List<int>();
         axialToIndex = new Dictionary<AxialPosition, int>();
 
+    }
+
+    public void GrowDendritic()
+    {
+        AxialPosition newTilePosition;
+        while (true)
+        {
+            //get a random Tile from Tiles
+            Random rng = new Random();
+            List<AxialPosition> existingTilePositions = Geos.ToList();
+            AxialPosition randomExisting = existingTilePositions[rng.Next(0, existingTilePositions.Count)];
+            //get a random neighbor
+            AxialPosition randomDirection = Constants.axialDirections[rng.Next(0, 6)];
+            AxialPosition candidatePosition = randomExisting + randomDirection;
+
+            if (!Geos.Contains(candidatePosition))
+            {
+                newTilePosition = candidatePosition;
+                break;
+            }
+        }
+
+        AddGeo(newTilePosition);
     }
 
     //Assumes that the position on the underlying tGrid has at least 1 neighbor Tile
@@ -37,7 +60,7 @@ public class GeoGrid
 
         FillSurroundingTiles(position);
 
-        var relativeHeights = tGrid.Tiles[position].RelativeVertexHeights;
+        var relativeHeights = TGrid.Tiles[position].RelativeVertexHeights;
 
         //determine hexType and rotation from relative vertex heights
         int hexType = 0;
@@ -51,8 +74,8 @@ public class GeoGrid
         }
 
 
-        var cornerVertexTypes = tGrid.sGrid.GetCornerVertexTypesForHex(position); //TODO consider these definitions into TileGrid, using base/rel heights
-        var edgeVertexTypes = tGrid.sGrid.GetEdgeVertexTypesForHex(position);
+        var cornerVertexTypes = TGrid.SGrid.GetCornerVertexTypesForHex(position); //TODO consider these definitions into TileGrid, using base/rel heights
+        var edgeVertexTypes = TGrid.SGrid.GetEdgeVertexTypesForHex(position);
         var vertexTypes = DataGenerator.GetVertexTypes24(hexType, cornerVertexTypes, edgeVertexTypes);
 
         Dictionary<AxialPosition, Vertex> axialToVertex = DataGenerator.GenerateV24Vertices(hexType, rotation);
@@ -64,7 +87,7 @@ public class GeoGrid
             VertexType type;
 
             Vertex v24 = axialToVertex[v24Position];
-            float absHeight = (float)v24.Height + tGrid.Tiles[position].BaseHeight;
+            float absHeight = (float)v24.Height + TGrid.Tiles[position].BaseHeight;
             AxialPosition absolutePosition6 = v24Position + position * 6;
             var absPosCartesian6 = GridUtilities.AxialPositionToVec2(absolutePosition6);
             cartesian = new Vector3(absPosCartesian6.X / 6, (float)absHeight * heightScale, absPosCartesian6.Y / 6);
@@ -110,15 +133,15 @@ public class GeoGrid
 
     public void FillSurroundingTiles(AxialPosition position)
     {
-        //if(!tGrid.Tiles.ContainsKey(position)) //shouldn't be necessary, since I'm already a neighbor of an existing geo
-        //    tGrid.AddTile(position);
+        //if(!TGrid.Tiles.ContainsKey(position)) //shouldn't be necessary, since I'm already a neighbor of an existing geo
+        //    TGrid.AddTile(position);
 
         for (int direction = 0; direction < 6; direction++)
         {
             AxialPosition neighborPosition = position + Constants.axialDirections[direction];
-            if (!tGrid.Tiles.ContainsKey(neighborPosition))
+            if (!TGrid.Tiles.ContainsKey(neighborPosition))
             {
-                tGrid.AddTile(neighborPosition);
+                TGrid.AddTile(neighborPosition);
             }
         }
 

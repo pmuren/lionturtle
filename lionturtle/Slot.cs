@@ -4,16 +4,16 @@ namespace lionturtle;
 public class Slot
 {
 	public HashSet<Module> modules;
-	public Dictionary<Module, List<Module>>[] supportedModules;
+	public Dictionary<Module, HashSet<Module>>[] supportedModules;
 
-	public Slot(List<Module> initialModules)
+	public Slot(HashSet<Module> initialModules)
 	{
         modules = new HashSet<Module>();
 
-        supportedModules = new Dictionary<Module, List<Module>>[6];
+        supportedModules = new Dictionary<Module, HashSet<Module>>[6];
 		for(int direction = 0; direction < 6; direction++)
 		{
-			supportedModules[direction] = new Dictionary<Module, List<Module>>();
+			supportedModules[direction] = new Dictionary<Module, HashSet<Module>>();
 		}
 
         foreach (Module module in initialModules)
@@ -31,7 +31,7 @@ public class Slot
 			{
                 if (!supportedModules[direction].ContainsKey(supportedModule))
 				{
-					supportedModules[direction].Add(supportedModule, new List<Module>());
+					supportedModules[direction].Add(supportedModule, new HashSet<Module>());
 				}
 				supportedModules[direction][supportedModule].Add(newModule);
 			}
@@ -48,30 +48,31 @@ public class Slot
 		//	dendrites
 	}
 
-    public List<Module>[] RemoveModule(Module oldModule)
+	///this method is a little hard to read and therefore sus
+    public HashSet<Module>[] RemoveModule(Module oldModule)
     {
-		var newlyUnsupportedModules = new List<Module>[6];
+		var newlyUnsupportedModules = new HashSet<Module>[6];
+
+        modules.Remove(oldModule);
 
         for (int direction = 0; direction < 6; direction++)
         {
-			newlyUnsupportedModules[direction] = new List<Module>();
+			newlyUnsupportedModules[direction] = new HashSet<Module>();
             foreach (Module supportedModule in DataGenerator.moduleSupportMap[oldModule][direction])
             {
 				if (supportedModules[direction].ContainsKey(supportedModule))
 				{
-					var supportingModules = supportedModules[direction][supportedModule];
-                    supportingModules.Remove(oldModule);
+                    supportedModules[direction][supportedModule].Remove(oldModule);
 
-                    if (supportingModules.Count == 0)
+                    if (supportedModules[direction][supportedModule].Count == 0)
                     {
                         newlyUnsupportedModules[direction].Add(supportedModule);
                         supportedModules[direction].Remove(supportedModule);
                     }
-                }
-            }
+				}
+			}
         }
 
-        modules.Remove(oldModule);
 		return newlyUnsupportedModules;
     }
 

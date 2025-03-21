@@ -6,113 +6,141 @@ namespace lionturtle;
 
 public class SlotGrid
 {
+    public Dictionary<AxialPosition, Module> collapses;
+
 	public Dictionary<AxialPosition, Slot> Slots = new Dictionary<AxialPosition, Slot>();
-    BoundingHex bounds;
 
     Queue<(Module, AxialPosition)> ModuleRemovalQueue = new Queue<(Module, AxialPosition)>();
 
     public SlotGrid()
 	{
 		Slots = new Dictionary<AxialPosition, Slot>();
-        bounds = new BoundingHex();
 
-        AxialPosition initialSlotPosition = new AxialPosition(0, 0);
-        Slots[initialSlotPosition] = new Slot( DataGenerator.allModules );
+        collapses = new();
+        //AxialPosition initialSlotPosition = new AxialPosition(0, 0);
+        //CollapseSlotToModule(initialSlotPosition, DataGenerator.allModules.First());
+        //Slots[initialSlotPosition] = new Slot(DataGenerator.allModules );
     }
 
-    public List<Module> GatherSupportedModules(AxialPosition homePosition){
-        List<Module> supportedModules = new();
-        Dictionary<Module, int> supportCount = new();
-        int numNeighborSlots = 0;
+    //public List<Module> GatherSupportedModules(AxialPosition homePosition){
+    //    List<Module> supportedModules = new();
+    //    Dictionary<Module, int> supportCount = new();
+    //    int numNeighborSlots = 0;
 
-        for(int direction = 0; direction < 6; direction++)
-        {
-            AxialPosition neighborDirection = Constants.axialDirections[direction];
-            AxialPosition neighborPosition = homePosition + neighborDirection;
-            if (Slots.ContainsKey(neighborPosition))
-            {
-                Slot neighbor = Slots[neighborPosition];
-                numNeighborSlots++;
-                int reverseDirection = (direction + 3) % 6;
-                foreach(Module module in neighbor.supportedModules[reverseDirection].Keys)
-                {
-                    if (!supportCount.ContainsKey(module))
-                    {
-                        supportCount.Add(module, 0);
-                    }
-                    supportCount[module] += 1;
-                }
-            }
-        }
+    //    for(int direction = 0; direction < 6; direction++)
+    //    {
+    //        AxialPosition neighborDirection = Constants.axialDirections[direction];
+    //        AxialPosition neighborPosition = homePosition + neighborDirection;
+    //        if (Slots.ContainsKey(neighborPosition))
+    //        {
+    //            Slot neighbor = Slots[neighborPosition];
+    //            numNeighborSlots++;
+    //            int reverseDirection = (direction + 3) % 6;
+    //            foreach(Module module in neighbor.supportedModules[reverseDirection].Keys)
+    //            {
+    //                if (!supportCount.ContainsKey(module))
+    //                {
+    //                    supportCount.Add(module, 0);
+    //                }
+    //                supportCount[module] += 1;
+    //            }
+    //        }
+    //    }
 
-        foreach (Module module in supportCount.Keys)
-        {
-            if (supportCount[module] == numNeighborSlots)
-            {
-                supportedModules.Add(module);
-            }
-        }
+    //    foreach (Module module in supportCount.Keys)
+    //    {
+    //        if (supportCount[module] == numNeighborSlots)
+    //        {
+    //            supportedModules.Add(module);
+    //        }
+    //    }
 
-        return supportedModules;
-    }
+    //    return supportedModules;
+    //}
 
     public void HandleQueue(){
         while (ModuleRemovalQueue.Count > 0)
         {
             var (moduleToRemove, slotPosition) = ModuleRemovalQueue.Dequeue();
-            if(!Slots.ContainsKey(slotPosition)) continue;
-            if(!Slots[slotPosition].modules.Contains(moduleToRemove)) continue;
-            RemoveModuleAndPropagate(moduleToRemove, slotPosition);
+
+            if (!Slots.ContainsKey(slotPosition))
+                Slots.Add(slotPosition, new Slot(DataGenerator.allModules.ToHashSet()));
+
+            if (Slots[slotPosition].modules.Count == 1 && Slots[slotPosition].modules.First() == moduleToRemove)
+            {
+                throw new Exception("Yikes. About to remove its last module");
+            }
+
+            var newlyUnsupportedModules = Slots[slotPosition].RemoveModule(moduleToRemove);
+
+            for (int direction = 0; direction < 6; direction++)
+            {
+                AxialPosition neighboringPosition = slotPosition + Constants.axialDirections[direction];
+                foreach (Module unsupportedModule in newlyUnsupportedModules[direction])
+                {
+                    ModuleRemovalQueue.Enqueue((unsupportedModule, neighboringPosition));
+                }
+            }
         }
     }
 
-    public void TryCollapseAndHandleQueue(AxialPosition position, Module selectedModule)
+    public List<Module> GetCandidates(AxialPosition position)
     {
-        //Module resultantModule = CollapseSlotAtPosition(position);
-        CollapseSlotToModule(position, selectedModule);
-        HandleQueue();
-        //return resultantModule;
+        if (Slots.ContainsKey(position)) return Slots[position].modules.ToList();
+        else return DataGenerator.allModules;
     }
 
-    private void CollapseSlotToModule(AxialPosition position, Module selectedModule)
+    public void CollapseSlotToModule(AxialPosition position, Module selectedModule)
     {
-        foreach (Module module in Slots[position].modules)
+        //collapses history is just for debugging
+        collapses.Add(position, selectedModule);
+
+        foreach (Module module in Slots.ContainsKey(position)?
+                                    Slots[position].modules.ToList()
+                                    : DataGenerator.allModules
+        )
         {
-            if (module != selectedModule) ModuleRemovalQueue.Enqueue((module, position));
+            if (module != selectedModule)
+                ModuleRemovalQueue.Enqueue((module, position));
         }
+
+        HandleQueue();
     }
 
-	private Module CollapseSlotAtPosition(AxialPosition position)
-	{
-        Random rng = new Random();
-        var randomIndex = rng.Next(0, Slots[position].modules.Count);
+	//private Module CollapseSlotToRandomModule(AxialPosition position)
+	//{
+ //       Random rng = new Random();
+ //       var randomIndex = rng.Next(0, Slots[position].modules.Count);
 
-        Module selectedModule = Slots[position].modules.ToArray()[randomIndex]; //TODO: decide on selection criteria
-		foreach (Module module in Slots[position].modules)
-		{
-            if (module != selectedModule) ModuleRemovalQueue.Enqueue((module, position));
-		}
+ //       Module selectedModule = Slots[position].modules.ToArray()[randomIndex]; //TODO: decide on selection criteria
+	//	foreach (Module module in Slots[position].modules)
+	//	{
+ //           if (module != selectedModule) ModuleRemovalQueue.Enqueue((module, position));
+	//	}
 
-        return selectedModule;
-	}
+ //       return selectedModule;
+	//}
 
     private void RemoveModuleAndPropagate(Module module, AxialPosition position)
 	{
-        if (!Slots.ContainsKey(position)) throw new ArgumentException("No Slot at position " + position, nameof(position));
+  //      if (Slots[position].modules.Count == 1 && Slots[position].modules.First() == module)
+  //      {
+  //          throw new Exception("Yikes. About to remove its last module");
+  //      }
 
-		var newlyUnsupportedModules = Slots[position].RemoveModule(module);
+  //      var newlyUnsupportedModules = Slots[position].RemoveModule(module);
 
-        if (Slots[position].modules.Count == 0)
-            throw new Exception("Oof. I removed its last module");
+  //      if (Slots[position].modules.Count == 0)
+  //          throw new Exception("Oof. I removed its last module");
 
-		for(int direction = 0; direction < 6; direction++)
-		{
-			AxialPosition neighboringPosition = position + Constants.axialDirections[direction];
-			foreach(Module unsupportedModule in newlyUnsupportedModules[direction])
-			{
-                ModuleRemovalQueue.Enqueue((unsupportedModule, neighboringPosition));
-            }
-		}
+		//for(int direction = 0; direction < 6; direction++)
+		//{
+		//	AxialPosition neighboringPosition = position + Constants.axialDirections[direction];
+		//	foreach(Module unsupportedModule in newlyUnsupportedModules[direction])
+		//	{
+  //              ModuleRemovalQueue.Enqueue((unsupportedModule, neighboringPosition));
+  //          }
+		//}
 	}
 
     public bool ValidateAllSlots()
@@ -138,46 +166,48 @@ public class SlotGrid
         return true;
     }
 
-    public void SettleNeighborsAndPropagate(AxialPosition position)
-    {
-        Slot slot = Slots[position];
-        for (int direction = 0; direction < 6; direction++)
-        {
-            AxialPosition neighboringPosition = position + Constants.axialDirections[direction];
-            if (Slots.ContainsKey(neighboringPosition))
-            {
-                foreach (Module neighborModule in Slots[neighboringPosition].modules)
-                {
-                    if (!slot.supportedModules[direction].ContainsKey(neighborModule))
-                    {
-                        RemoveModuleAndPropagate(neighborModule, neighboringPosition);
-                    }
-                }
-            }
-        }
-    }
+    //public void SettleNeighborsAndPropagate(AxialPosition position)
+    //{
+    //    Slot slot = Slots[position];
+    //    for (int direction = 0; direction < 6; direction++)
+    //    {
+    //        AxialPosition neighboringPosition = position + Constants.axialDirections[direction];
+    //        if (Slots.ContainsKey(neighboringPosition))
+    //        {
+    //            foreach (Module neighborModule in Slots[neighboringPosition].modules)
+    //            {
+    //                if (!slot.supportedModules[direction].ContainsKey(neighborModule))
+    //                {
+    //                    RemoveModuleAndPropagate(neighborModule, neighboringPosition);
+    //                }
+    //            }
+    //        }
+    //    }
+    //}
 
-    public List<Module>[] GatherUnsupportedNeighborModules(AxialPosition position)
-    {
-        List<Module>[] unsupportedNeighborModules = new List<Module>[6];
+    //public List<Module>[] GatherUnsupportedNeighborModules(AxialPosition position)
+    //{
+    //    List<Module>[] unsupportedNeighborModules = new List<Module>[6];
 
-        Slot slot = Slots[position];
-        for (int direction = 0; direction < 6; direction++)
-        {
-            AxialPosition neighboringPosition = position + Constants.axialDirections[direction];
-            if (Slots.ContainsKey(neighboringPosition))
-            {
-                foreach (Module neighborModule in Slots[neighboringPosition].modules)
-                {
-                    if (!slot.supportedModules[direction].ContainsKey(neighborModule))
-                    {
-                        unsupportedNeighborModules[direction].Add(neighborModule);
-                    }
-                }
-            }
-        }
-        return unsupportedNeighborModules;
-    }
+    //    Slot slot = Slots[position];
+    //    for (int direction = 0; direction < 6; direction++)
+    //    {
+    //        AxialPosition neighboringPosition = position + Constants.axialDirections[direction];
+    //        //TODO okay this isn't THE bug, but I feel like it's bug-adjacent
+    //        //TODO okay actually this method wasn't being used at all?
+    //        if (Slots.ContainsKey(neighboringPosition))
+    //        {
+    //            foreach (Module neighborModule in Slots[neighboringPosition].modules)
+    //            {
+    //                if (!slot.supportedModules[direction].ContainsKey(neighborModule))
+    //                {
+    //                    unsupportedNeighborModules[direction].Add(neighborModule);
+    //                }
+    //            }
+    //        }
+    //    }
+    //    return unsupportedNeighborModules;
+    //}
 
     public VertexType[] GetEdgeVertexTypesForHex(AxialPosition hPosition)
     {
@@ -314,191 +344,192 @@ public class SlotGrid
         return vertexType;
     }
 
-    /* Ensures the arc starts and ends at the tips */
-    public List<int> NormalizeArc(List<int> unsorted)
-    {
-        for (int i = 1; i < unsorted.Count; i++)
-        {
-            if ((unsorted[i] - unsorted[i - 1] + 6) % 6 != 1)
-                return unsorted.GetRange(i, unsorted.Count - i).Concat(
-                    unsorted.GetRange(0, i)).ToList();
-        }
-        return unsorted;
-    }
+    ///* Ensures the arc starts and ends at the tips */
+    //public List<int> NormalizeArc(List<int> unsorted)
+    //{
+    //    for (int i = 1; i < unsorted.Count; i++)
+    //    {
+    //        if ((unsorted[i] - unsorted[i - 1] + 6) % 6 != 1)
+    //            return unsorted.GetRange(i, unsorted.Count - i).Concat(
+    //                unsorted.GetRange(0, i)).ToList();
+    //    }
+    //    return unsorted;
+    //}
 
-    public void ExpandToInclude(AxialPosition hPosition)
-    {
-        var hPositionS = 0 - hPosition.Q - hPosition.R;
-        BoundingHex newBounds = new BoundingHex(new int[]{
-            Math.Max(bounds.Extents[(int)Extent.QMax], hPosition.Q),
-            Math.Min(bounds.Extents[(int)Extent.RMin], hPosition.R),
-            Math.Max(bounds.Extents[(int)Extent.SMax], hPositionS),
-            Math.Min(bounds.Extents[(int)Extent.QMin], hPosition.Q),
-            Math.Max(bounds.Extents[(int)Extent.RMax], hPosition.R),
-            Math.Min(bounds.Extents[(int)Extent.SMin], hPositionS)
-        });
-        ExpandToDesiredBounds(newBounds);
-    }
+    //public void ExpandToInclude(AxialPosition hPosition)
+    //{
+    //    var hPositionS = 0 - hPosition.Q - hPosition.R;
+    //    BoundingHex newBounds = new BoundingHex(new int[]{
+    //        Math.Max(bounds.Extents[(int)Extent.QMax], hPosition.Q),
+    //        Math.Min(bounds.Extents[(int)Extent.RMin], hPosition.R),
+    //        Math.Max(bounds.Extents[(int)Extent.SMax], hPositionS),
+    //        Math.Min(bounds.Extents[(int)Extent.QMin], hPosition.Q),
+    //        Math.Max(bounds.Extents[(int)Extent.RMax], hPosition.R),
+    //        Math.Min(bounds.Extents[(int)Extent.SMin], hPositionS)
+    //    });
+    //    ExpandToDesiredBounds(newBounds);
+    //}
 
-    private void ExpandToDesiredBounds(BoundingHex boundsDesired)
-    {
-        while(!bounds.Contains(boundsDesired)) //consider this condition
-        {
-            List<int> sidesToExpand = FigureSidesToExpand(boundsDesired);
-            PushBoundariesByOne(sidesToExpand);
-        }
-    }
+    //private void ExpandToDesiredBounds(BoundingHex boundsDesired)
+    //{
+    //    while(!bounds.Contains(boundsDesired)) //consider this condition
+    //    {
+    //        List<int> sidesToExpand = FigureSidesToExpand(boundsDesired);
+    //        PushBoundariesByOne(sidesToExpand);
+    //    }
+    //}
 
-    private void PushBoundariesByOne(List<int> sidesToNudge)
-    {
-        sidesToNudge = NormalizeArc(sidesToNudge);
+    //private void PushBoundariesByOne(List<int> sidesToNudge)
+    //{
+    //    sidesToNudge = NormalizeArc(sidesToNudge);
 
-        int initialSide = sidesToNudge.First();
-        int headDirection = (initialSide + 2) % 6;
+    //    int initialSide = sidesToNudge.First();
+    //    int headDirection = (initialSide + 2) % 6;
 
-        bounds.Nudge(sidesToNudge); //expand boundaries before fill
-        AxialPosition headPosition = bounds.GetCorner(initialSide);
+    //    bounds.Nudge(sidesToNudge); //expand boundaries before fill
+    //    AxialPosition headPosition = bounds.GetCorner(initialSide);
 
-        while (true)
-        {
-            List<Module> supportedModules = GatherSupportedModules(headPosition);
+    //    while (true)
+    //    {
+    //        List<Module> supportedModules = GatherSupportedModules(headPosition);
 
-            Slots.Add(headPosition, new Slot(supportedModules));
-            SettleNeighborsAndPropagate(headPosition);
+    //        //Slots.Add(headPosition, new Slot(supportedModules));
+    //        Slots.Add(headPosition, new Slot(DataGenerator.allModules));
+    //        SettleNeighborsAndPropagate(headPosition);
 
-            //maybe adjust heading
-            while (!bounds.InBounds(headPosition + Constants.axialDirections[headDirection]))
-            {
-                headDirection = (headDirection + 1) % 6;
-            }
+    //        //maybe adjust heading
+    //        while (!bounds.InBounds(headPosition + Constants.axialDirections[headDirection]))
+    //        {
+    //            headDirection = (headDirection + 1) % 6;
+    //        }
 
-            //maybe stop
-            if (Slots.ContainsKey(headPosition + Constants.axialDirections[headDirection]))
-            {
-                break;
-            }
+    //        //maybe stop
+    //        if (Slots.ContainsKey(headPosition + Constants.axialDirections[headDirection]))
+    //        {
+    //            break;
+    //        }
 
-            //advance
-            headPosition += Constants.axialDirections[headDirection];
-        }
-    }
+    //        //advance
+    //        headPosition += Constants.axialDirections[headDirection];
+    //    }
+    //}
 
-    private List<int> FigureSidesToExpand(BoundingHex desired)
-    {
-        List<int> affectedDirections = new();
-        if (desired.Extents[(int)Extent.QMax] > bounds.Extents[(int)Extent.QMax]) affectedDirections.Add(0);
-        if (desired.Extents[(int)Extent.RMin] < bounds.Extents[(int)Extent.RMin]) affectedDirections.Add(1);
-        if (desired.Extents[(int)Extent.SMax] > bounds.Extents[(int)Extent.SMax]) affectedDirections.Add(2);
-        if (desired.Extents[(int)Extent.QMin] < bounds.Extents[(int)Extent.QMin]) affectedDirections.Add(3);
-        if (desired.Extents[(int)Extent.RMax] > bounds.Extents[(int)Extent.RMax]) affectedDirections.Add(4);
-        if (desired.Extents[(int)Extent.SMin] < bounds.Extents[(int)Extent.SMin]) affectedDirections.Add(5);
-        return affectedDirections;
-    }
+    //private List<int> FigureSidesToExpand(BoundingHex desired)
+    //{
+    //    List<int> affectedDirections = new();
+    //    if (desired.Extents[(int)Extent.QMax] > bounds.Extents[(int)Extent.QMax]) affectedDirections.Add(0);
+    //    if (desired.Extents[(int)Extent.RMin] < bounds.Extents[(int)Extent.RMin]) affectedDirections.Add(1);
+    //    if (desired.Extents[(int)Extent.SMax] > bounds.Extents[(int)Extent.SMax]) affectedDirections.Add(2);
+    //    if (desired.Extents[(int)Extent.QMin] < bounds.Extents[(int)Extent.QMin]) affectedDirections.Add(3);
+    //    if (desired.Extents[(int)Extent.RMax] > bounds.Extents[(int)Extent.RMax]) affectedDirections.Add(4);
+    //    if (desired.Extents[(int)Extent.SMin] < bounds.Extents[(int)Extent.SMin]) affectedDirections.Add(5);
+    //    return affectedDirections;
+    //}
 }
 
-public enum Extent
-{
-    QMax,
-    RMin,
-    SMax,
-    QMin,
-    RMax,
-    SMin
-}
+//public enum Extent
+//{
+//    QMax,
+//    RMin,
+//    SMax,
+//    QMin,
+//    RMax,
+//    SMin
+//}
 
-class BoundingHex //this class is kind of mess. need to figure out a data structure for these sides
-{
+//class BoundingHex //this class is kind of mess. need to figure out a data structure for these sides
+//{
 
-    public int[] Extents;
-    public BoundingHex()
-    {
-        Extents = new int[] {0, 0, 0, 0, 0, 0};
-    }
+//    public int[] Extents;
+//    public BoundingHex()
+//    {
+//        Extents = new int[] {0, 0, 0, 0, 0, 0};
+//    }
 
-    public BoundingHex(int[] extents)
-    {
-        Extents = extents;
-    }
+//    public BoundingHex(int[] extents)
+//    {
+//        Extents = extents;
+//    }
 
-    public void ExpandToInclude(AxialPosition hexPosition)
-    {
-        int hexS = 0 - hexPosition.Q - hexPosition.R;
-        if (hexPosition.Q > Extents[(int)Extent.QMax])
-            Extents[(int)Extent.QMax] = hexPosition.Q;
-        if (hexPosition.R < Extents[(int)Extent.RMin])
-            Extents[(int)Extent.RMin] = hexPosition.R;
-        if (hexS > Extents[(int)Extent.SMax])
-            Extents[(int)Extent.SMax] = hexS;
-        if (hexPosition.Q < Extents[(int)Extent.QMin])
-            Extents[(int)Extent.QMin] = hexPosition.Q;
-        if (hexPosition.R > Extents[(int)Extent.RMax])
-            Extents[(int)Extent.RMax] = hexPosition.R;
-        if (hexS < Extents[(int)Extent.SMin])
-            Extents[(int)Extent.SMin] = hexS;
-    }
+//    public void ExpandToInclude(AxialPosition hexPosition)
+//    {
+//        int hexS = 0 - hexPosition.Q - hexPosition.R;
+//        if (hexPosition.Q > Extents[(int)Extent.QMax])
+//            Extents[(int)Extent.QMax] = hexPosition.Q;
+//        if (hexPosition.R < Extents[(int)Extent.RMin])
+//            Extents[(int)Extent.RMin] = hexPosition.R;
+//        if (hexS > Extents[(int)Extent.SMax])
+//            Extents[(int)Extent.SMax] = hexS;
+//        if (hexPosition.Q < Extents[(int)Extent.QMin])
+//            Extents[(int)Extent.QMin] = hexPosition.Q;
+//        if (hexPosition.R > Extents[(int)Extent.RMax])
+//            Extents[(int)Extent.RMax] = hexPosition.R;
+//        if (hexS < Extents[(int)Extent.SMin])
+//            Extents[(int)Extent.SMin] = hexS;
+//    }
 
-    public bool InBounds(AxialPosition position)
-    {
-        int S = 0 - position.Q - position.R;
-        if (position.Q > Extents[(int)Extent.QMax])
-            return false;
-        if (position.R < Extents[(int)Extent.RMin])
-            return false;
-        if (S > Extents[(int)Extent.SMax])
-            return false;
-        if (position.Q < Extents[(int)Extent.QMin])
-            return false;
-        if (position.R > Extents[(int)Extent.RMax])
-            return false;
-        if (S < Extents[(int)Extent.SMin])
-            return false;
-        return true;
-    }
+//    public bool InBounds(AxialPosition position)
+//    {
+//        int S = 0 - position.Q - position.R;
+//        if (position.Q > Extents[(int)Extent.QMax])
+//            return false;
+//        if (position.R < Extents[(int)Extent.RMin])
+//            return false;
+//        if (S > Extents[(int)Extent.SMax])
+//            return false;
+//        if (position.Q < Extents[(int)Extent.QMin])
+//            return false;
+//        if (position.R > Extents[(int)Extent.RMax])
+//            return false;
+//        if (S < Extents[(int)Extent.SMin])
+//            return false;
+//        return true;
+//    }
 
-    public bool Contains(BoundingHex other)
-    {
-        if (Extents[(int)Extent.QMax] < other.Extents[(int)Extent.QMax])
-            return false;
-        if (Extents[(int)Extent.RMin] > other.Extents[(int)Extent.RMin])
-            return false;
-        if (Extents[(int)Extent.SMax] < other.Extents[(int)Extent.SMax])
-            return false;
-        if (Extents[(int)Extent.QMin] > other.Extents[(int)Extent.QMin])
-            return false;
-        if (Extents[(int)Extent.RMax] < other.Extents[(int)Extent.RMax])
-            return false;
-        if (Extents[(int)Extent.SMin] > other.Extents[(int)Extent.SMin])
-            return false;
-        return true;
-    }
+//    public bool Contains(BoundingHex other)
+//    {
+//        if (Extents[(int)Extent.QMax] < other.Extents[(int)Extent.QMax])
+//            return false;
+//        if (Extents[(int)Extent.RMin] > other.Extents[(int)Extent.RMin])
+//            return false;
+//        if (Extents[(int)Extent.SMax] < other.Extents[(int)Extent.SMax])
+//            return false;
+//        if (Extents[(int)Extent.QMin] > other.Extents[(int)Extent.QMin])
+//            return false;
+//        if (Extents[(int)Extent.RMax] < other.Extents[(int)Extent.RMax])
+//            return false;
+//        if (Extents[(int)Extent.SMin] > other.Extents[(int)Extent.SMin])
+//            return false;
+//        return true;
+//    }
 
-    public void Nudge(List<int> sides)
-    {
-        if (sides.Contains(0)) Extents[(int)Extent.QMax] += 1;
-        if (sides.Contains(1)) Extents[(int)Extent.RMin] -= 1;
-        if (sides.Contains(2)) Extents[(int)Extent.SMax] += 1;
-        if (sides.Contains(3)) Extents[(int)Extent.QMin] -= 1;
-        if (sides.Contains(4)) Extents[(int)Extent.RMax] += 1;
-        if (sides.Contains(5)) Extents[(int)Extent.SMin] -= 1;
-    }
+//    public void Nudge(List<int> sides)
+//    {
+//        if (sides.Contains(0)) Extents[(int)Extent.QMax] += 1;
+//        if (sides.Contains(1)) Extents[(int)Extent.RMin] -= 1;
+//        if (sides.Contains(2)) Extents[(int)Extent.SMax] += 1;
+//        if (sides.Contains(3)) Extents[(int)Extent.QMin] -= 1;
+//        if (sides.Contains(4)) Extents[(int)Extent.RMax] += 1;
+//        if (sides.Contains(5)) Extents[(int)Extent.SMin] -= 1;
+//    }
 
-    public AxialPosition GetCorner(int index)
-    {
-        switch (index)
-        {
-            case 0:
-                return new AxialPosition((Extents[(int)Extent.QMax]), 0 - (Extents[(int)Extent.QMax]) - Extents[(int)Extent.SMin]);
-            case 1:
-                return new AxialPosition(Extents[(int)Extent.QMax], (Extents[(int)Extent.RMin]));
-            case 2:
-                return new AxialPosition(0 - Extents[(int)Extent.RMin] - (Extents[(int)Extent.SMax]), Extents[(int)Extent.RMin]);
-            case 3:
-                return new AxialPosition((Extents[(int)Extent.QMin]), 0 - (Extents[(int)Extent.QMin]) - Extents[(int)Extent.SMax]);
-            case 4:
-                return new AxialPosition(Extents[(int)Extent.QMin], (Extents[(int)Extent.RMax]));
-            case 5:
-                return new AxialPosition(0 - Extents[(int)Extent.RMax] - (Extents[(int)Extent.SMin]), Extents[(int)Extent.RMax]);
-        }
-        throw new ArgumentException("argument must be 0, 1, 2, 3, 4, or 5");
-    }
-}
+//    public AxialPosition GetCorner(int index)
+//    {
+//        switch (index)
+//        {
+//            case 0:
+//                return new AxialPosition((Extents[(int)Extent.QMax]), 0 - (Extents[(int)Extent.QMax]) - Extents[(int)Extent.SMin]);
+//            case 1:
+//                return new AxialPosition(Extents[(int)Extent.QMax], (Extents[(int)Extent.RMin]));
+//            case 2:
+//                return new AxialPosition(0 - Extents[(int)Extent.RMin] - (Extents[(int)Extent.SMax]), Extents[(int)Extent.RMin]);
+//            case 3:
+//                return new AxialPosition((Extents[(int)Extent.QMin]), 0 - (Extents[(int)Extent.QMin]) - Extents[(int)Extent.SMax]);
+//            case 4:
+//                return new AxialPosition(Extents[(int)Extent.QMin], (Extents[(int)Extent.RMax]));
+//            case 5:
+//                return new AxialPosition(0 - Extents[(int)Extent.RMax] - (Extents[(int)Extent.SMin]), Extents[(int)Extent.RMax]);
+//        }
+//        throw new ArgumentException("argument must be 0, 1, 2, 3, 4, or 5");
+//    }
+//}
