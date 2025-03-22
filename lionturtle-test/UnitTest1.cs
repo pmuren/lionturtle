@@ -5,397 +5,45 @@ using System.Numerics;
 
 namespace lionturtle_test
 {
-    public class GeoGridTests
+       public class GridTests
     {
         [Fact]
-        public void Place_One()
+        public void One_Pair()
         {
-            SlotGrid sGrid = new SlotGrid();
-            TileGrid tGrid = new TileGrid(sGrid);
-            GeoGrid gGrid = new GeoGrid(tGrid);
-            gGrid.AddGeo(new AxialPosition(0, 0));
-            gGrid.AddGeo(new AxialPosition(0, 0) + Constants.axialDirections[0]);
-        }
+            BlurryGrid grid = new BlurryGrid();
+            AxialPosition position0 = new AxialPosition(2, -1);
+            grid.FindOrCreateBlurryValue(position0);
+            AxialPosition position1 = new AxialPosition(1, -2);
+            grid.FindOrCreateBlurryValue(position1);
 
-        [Fact]
-        public void Fill_spiral()
-        {
-            SlotGrid sGrid = new SlotGrid();
-            TileGrid tGrid = new TileGrid(sGrid);
-            GeoGrid gGrid = new GeoGrid(tGrid);
-
-            int numRings = 12;
-
-            gGrid.AddGeo(new AxialPosition(0, 0));
-            AxialPosition newGeoPosition = new AxialPosition(0, 0);
-            for (int i = 0; i < numRings; i++)
-            {
-                for (int j = 0; j < 6; j++)
-                {
-                    for (int k = 0; k < i; k++)
-                    {
-                        newGeoPosition += Constants.axialDirections[j];
-                        gGrid.AddGeo(newGeoPosition);
-                    }
-                }
-                newGeoPosition += Constants.axialDirections[4];
-            }
-        }
-
-        [Fact]
-        public void Grow_Dendritic()
-        {
-            SlotGrid sGrid = new SlotGrid();
-
-            //int slotGridSize = 50;
-            //sGrid.ExpandToInclude(new AxialPosition(slotGridSize, 0));
-            //sGrid.ExpandToInclude(new AxialPosition(0, -slotGridSize));
-            //sGrid.ExpandToInclude(new AxialPosition(-slotGridSize, slotGridSize));
-
-            TileGrid tGrid = new TileGrid(sGrid);
-            GeoGrid gGrid = new GeoGrid(tGrid);
-
-            gGrid.AddGeo(new AxialPosition(0, 0));
-
-            foreach (AxialPosition slotPosition in sGrid.Slots.Keys.ToList())
-            {
-                Slot slot = sGrid.Slots[slotPosition];
-                foreach (Module module in DataGenerator.allModules)
-                {
-                    if (!slot.modules.Contains(module))
-                    {
-                        slot.AddModule(module);
-                    }
-                }
-            }
-
-            for (int i = 0; i < 10000; i++)
-            {
-                gGrid.GrowDendritic();
-                //if (!sGrid.ValidateAllSlots())
-                //{
-                //    Debug.Write("ehhhhh");
-                //}
-            }
-
-            Debug.Write("It's working???");
+            grid.ResolveValueAtPosition(position0, 4);
+            grid.ResolveValueAtPosition(position1, 3);
         }
     }
 
-    public class TileGridTests
-    {
+    public class BlurryValueTests{
         [Fact]
-        public void Dendritic_Growth_One()
+        public void Create_And_Constrain_A_BlurryValue()
         {
-            SlotGrid sGrid = new SlotGrid();
-            TileGrid tGrid = new TileGrid(sGrid);
-            tGrid.GrowDendritic();
-            Assert.Equal(2, tGrid.Tiles.Count);
-        }
+            BlurryValue blur = new BlurryValue();
+            blur.Constrain(null, null);
+            Assert.Null(blur.Min);
+            Assert.Null(blur.Max);
 
-        [Fact]
-        public void Dendritic_Growth_TenThousand()
-        {
-            SlotGrid sGrid = new SlotGrid();
+            blur.Constrain(-5, null);
+            Assert.Equal(-5, blur.Min);
+            Assert.Null(blur.Max);
 
-            //int numRings = 40;
-            //sGrid.Slots.Add(new AxialPosition(0, 0), new Slot(DataGenerator.allModules));
-            //AxialPosition newSlotPosition = new AxialPosition(0, 0);
-            //for (int i = 0; i < numRings; i++)
-            //{
-            //    for (int j = 0; j < 6; j++)
-            //    {
-            //        for (int k = 0; k < i; k++)
-            //        {
-            //            newSlotPosition += Constants.axialDirections[j];
-            //            sGrid.Slots.Add(newSlotPosition, new Slot(DataGenerator.allModules));
-
-            //        }
-            //    }
-            //    newSlotPosition += Constants.axialDirections[4];
-            //}
-
-            TileGrid tGrid = new TileGrid(sGrid);
-            {
-                for(int i = 0; i < 5000; i++)
-                {
-                    tGrid.GrowDendritic();
-                }
-            }
-            Assert.Equal(10001, tGrid.Tiles.Count);
+            blur.Constrain(null, 8);
+            Assert.Equal(-5, blur.Min);
+            Assert.Equal(8, blur.Max);
         }
     }
-
-    //public class SlotGridTests
-    //{
-    //    [Fact]
-    //    public void Gathering_Support()
-    //    {
-    //        SlotGrid sGrid = new SlotGrid();
-    //        AxialPosition slotAPosition = new AxialPosition(0, 0);
-    //        AxialPosition slotBPosition = new AxialPosition(0, 0) + Constants.axialDirections[0];
-    //        AxialPosition slotCPosition = new AxialPosition(0, 0) + Constants.axialDirections[1];
-    //        sGrid.Slots[slotAPosition] = new Slot(DataGenerator.allModules);
-    //        sGrid.Slots[slotBPosition] = new Slot(DataGenerator.allModules);
-    //        List<Module> supportedInSlotC = sGrid.GatherSupportedModules(slotCPosition);
-    //        Assert.Equal(19, supportedInSlotC.Count);
-    //    }
-
-    //    [Fact]
-    //    public void Gathering_Support_From_Resolved_Flat_Neighbors()
-    //    {
-    //        SlotGrid sGrid = new SlotGrid();
-    //        AxialPosition slotAPosition = new AxialPosition(0, 0);
-    //        AxialPosition slotBPosition = new AxialPosition(0, 0) + Constants.axialDirections[0];
-    //        AxialPosition slotCPosition = new AxialPosition(0, 0) + Constants.axialDirections[1];
-    //        sGrid.Slots[slotAPosition] = new Slot(new List<Module>{DataGenerator.allModules.First()});
-    //        sGrid.Slots[slotBPosition] = new Slot(new List<Module>{DataGenerator.allModules.First()});
-    //        List<Module> supportedInSlotC = sGrid.GatherSupportedModules(slotCPosition);
-    //        Assert.Equal(7, supportedInSlotC.Count);
-    //    }
-
-    //    [Fact]
-    //    public void Expand_To_Include_One()
-    //    {
-    //        SlotGrid sGrid = new SlotGrid();
-    //        AxialPosition slotAPosition = new AxialPosition(0, 0);
-    //        sGrid.Slots[slotAPosition] = new Slot(new List<Module> { DataGenerator.allModules.First() });
-    //        sGrid.ExpandToInclude(new AxialPosition(0, 0) + Constants.axialDirections[0]);
-
-    //        Assert.Equal(new List<AxialPosition> {
-    //            new AxialPosition(0, 0),
-    //            new AxialPosition(1, 0)
-    //        }, sGrid.Slots.Keys.ToList());
-    //    }
-
-    //    [Fact]
-    //    public void Expand_To_Include_Multiple()
-    //    {
-    //        SlotGrid sGrid = new SlotGrid();
-    //        AxialPosition slotAPosition = new AxialPosition(0, 0);
-    //        sGrid.Slots[slotAPosition] = new Slot(new List<Module> { DataGenerator.allModules.First() });
-    //        sGrid.ExpandToInclude(new AxialPosition(0, 0) + Constants.axialDirections[0]);
-    //        sGrid.ExpandToInclude(new AxialPosition(0, 0) + Constants.axialDirections[2]);
-    //        sGrid.ExpandToInclude(new AxialPosition(0, 0) + Constants.axialDirections[1] + Constants.axialDirections[1]);
-
-    //        Assert.Equal(new List<AxialPosition> {
-    //            new AxialPosition(0, 0),
-    //            new AxialPosition(1, 0),
-    //            new AxialPosition(1, -1),
-    //            new AxialPosition(0, -1),
-    //            new AxialPosition(2, -1),
-    //            new AxialPosition(2, -2),
-    //            new AxialPosition(1, -2)
-    //        }, sGrid.Slots.Keys.ToList());
-    //    }
-
-    //    [Fact]
-    //    public void ExpandToTwoAway()
-    //    {
-    //        SlotGrid sGrid = new SlotGrid();
-    //        AxialPosition slotAPosition = new AxialPosition(0, 0);
-    //        sGrid.Slots[slotAPosition] = new Slot(new List<Module> { DataGenerator.allModules.First() });
-    //        sGrid.ExpandToInclude(new AxialPosition(0, 0) + Constants.axialDirections[1] + Constants.axialDirections[1]);
-
-    //        Assert.Equal(new List<AxialPosition> {
-    //            new AxialPosition(0, 0),
-    //            new AxialPosition(1, -1),
-    //            new AxialPosition(2, -2)
-    //        }, sGrid.Slots.Keys.ToList());
-    //    }
-    //}
-
-    //public class ArcTests
-    //{
-    //    [Fact]
-    //    public void Normalizing_Arc()
-    //    {
-    //        SlotGrid sGrid = new();
-    //        List<int> unsorted = new List<int> { 1, 2, 5, 0 };
-    //        var sorted = sGrid.NormalizeArc(unsorted);
-    //        Assert.Equal(new List<int> { 5, 0, 1, 2 }, sorted);
-
-    //        List<int> unsorted2 = new List<int> { 0, 1, 5 };
-    //        var sorted2 = sGrid.NormalizeArc(unsorted2);
-    //        Assert.Equal(new List<int> { 5, 0, 1 }, sorted2);
-
-    //        List<int> unsorted3 = new List<int> { 0, 1, 2, 4, 5 };
-    //        var sorted3 = sGrid.NormalizeArc(unsorted3);
-    //        Assert.Equal(new List<int> { 4, 5, 0, 1, 2 }, sorted3);
-
-    //        List<int> unsorted4 = new List<int> { 1, 2, 3 };
-    //        var sorted4 = sGrid.NormalizeArc(unsorted4);
-    //        Assert.Equal(new List<int> { 1, 2, 3 }, sorted4);
-
-    //        List<int> unsorted5 = new List<int> { 3, 4, 5, 0, 1, 2 };
-    //        var sorted5 = sGrid.NormalizeArc(unsorted5);
-    //        Assert.Equal(new List<int> { 3, 4, 5, 0, 1, 2 }, sorted5);
-    //    }
-    //}
 
     public class AxialPositionTests
     {
-        //[Fact]
-        //public void Data_Playground()
-        //{
-        //    //var allModules = DataGenerator.allModules;
-
-        //    //SlotGrid grid = new SlotGrid();
-        //    //grid.CollapseEverything();
-
-        //    //var hexes = new Dictionary<AxialPosition, int[]>();
-        //    //foreach(AxialPosition position in grid.Slots.Keys)
-        //    //{
-        //    //    var tileHeight = grid.TileHeights[position];
-        //    //    var relativeVertexHeights = grid.Slots[position].modules.First().GetRelativeVertexHeights();
-        //    //    int[] hex = new int[6];
-        //    //    for(int vertexIndex = 0; vertexIndex < 6; vertexIndex++)
-        //    //    {
-        //    //        hex[vertexIndex] = relativeVertexHeights[vertexIndex] + (int)Math.Floor(tileHeight);
-        //    //    }
-        //    //    hexes[position] = hex;
-        //    //}
-
-        //    //var hexGrid = new HexGrid();
-        //    //hexGrid.Populate();
-        //    //var hexesString = hexGrid.GetStringHexes();
-        //    //Debug.Write(hexesString);
-
-        //    //bool allGood = grid.ValidateAllSlots();
-        //    //Debug.Write(allGood);
-
-        //    //List<int[]> relativeVertexGroups = new List<int[]>();
-        //    //foreach (AxialPosition position in grid.Slots.Keys)
-        //    //{
-        //    //    relativeVertexGroups.Add(grid.Slots[position].modules.First().GetRelativeVertexHeights());
-        //    //}
-        //    //Debug.Write(relativeVertexGroups);
-
-
-        //    //the trick here is to get the hexType and rotation from the slotGrid data . . .
-        //    //I'm half-way to doing this in LandMesh.cs (Godot)
-        //    //var vertices24 = DataGenerator.GenerateV24Vertices(2, 1);
-        //    //vertices24 = DataGenerator.PopulateVertexTypes(vertices24, 2, new VertexType[]
-        //    //{
-        //    //    VertexType.Slope, VertexType.Crest, VertexType.FootCrest,
-        //    //    VertexType.Slope, VertexType.Slope, VertexType.Slope
-        //    //}, new VertexType[]
-        //    //{
-        //    //    VertexType.Slope, VertexType.Crest, VertexType.Slope,
-        //    //    VertexType.Slope, VertexType.Slope, VertexType.Slope
-        //    //});
-
-        //    //Debug.Write(vertices24);
-
-
-        //    Dictionary<AxialPosition, Vertex> Vertices = new();
-        //    Dictionary<AxialPosition, Hex> Hexes = new();
-
-        //    SlotGrid slotGrid = new SlotGrid();
-        //    slotGrid.CollapseEverything();
-
-        //    var hexPositionToVertHeights = new Dictionary<AxialPosition, int[]>();
-        //    foreach (AxialPosition position in slotGrid.Slots.Keys)
-        //    {
-        //        var tileHeight = slotGrid.TileHeights[position];
-        //        var relativeVertexHeights = slotGrid.Slots[position].modules.First().GetRelativeVertexHeights();
-        //        int[] hex = new int[6];
-        //        for (int vertexIndex = 0; vertexIndex < 6; vertexIndex++)
-        //        {
-        //            hex[vertexIndex] = relativeVertexHeights[vertexIndex] + (int)Math.Floor(tileHeight);
-        //        }
-        //        hexPositionToVertHeights[position] = hex;
-        //    }
-
-        //    //creating or finding Vertex objects and adding them to the Hexes and Vertices dictionaries
-        //    foreach (AxialPosition position in hexPositionToVertHeights.Keys)
-        //    {
-        //        Hexes[position] = new Hex(new Vertex[6], new VertexType[6]);
-        //        for (int vertexIndex = 0; vertexIndex < 6; vertexIndex++)
-        //        {
-        //            AxialPosition vPosition =
-        //                GridUtilities.GetVertexPositionForHexV(position, vertexIndex);
-        //            int vHeight = hexPositionToVertHeights[position][vertexIndex];
-        //            Vertex currentVertex;
-        //            if (!Vertices.ContainsKey(vPosition))
-        //            {
-        //                currentVertex = new Vertex(vPosition, vHeight);
-        //            }
-        //            else
-        //            {
-        //                currentVertex = Vertices[vPosition];
-        //            }
-        //            Hexes[position].Verts[vertexIndex] = currentVertex;
-        //            Vertices[vPosition] = currentVertex;
-        //        }
-        //    }
-
-        //    //foreach( AxialPosition position in Vertices.Keys)
-        //    //{
-        //    //Vertices[position].type = slotGrid.GetVertexType(position);
-        //    //}
-
-        //    foreach (AxialPosition position in slotGrid.Slots.Keys)
-        //    {
-        //        var module = slotGrid.Slots[position].modules.First();
-        //        var relativeVerts = module.GetRelativeVertexHeights();
-
-        //        int hexType = 0;
-        //        int rotation = 0;
-        //        for (int direction = 0; direction < 6; direction++)
-        //        {
-        //            if (relativeVerts[direction] == 1)
-        //            {
-        //                if (rotation == 0) rotation = direction;
-        //                hexType++;
-        //            }
-        //        }
-
-        //        var cornerVertexTypes = slotGrid.GetCornerVertexTypesForHex(position);
-        //        var edgeVertexTypes = slotGrid.GetEdgeVertexTypesForHex(position);
-
-        //        var vertices24 = DataGenerator.GenerateV24Vertices(hexType, rotation);
-        //        vertices24 = DataGenerator.PopulateVertexTypes(
-        //            vertices24,
-        //            hexType,
-        //            cornerVertexTypes,
-        //            edgeVertexTypes
-        //        );
-
-        //        //Now IN THEORY we just need to bundle these vertices into
-        //        //triangles and create geometry out of them!
-        //        //oh right, and I gotta add absolute heights & positions to the rels
-
-        //        var triangleGroups = DataGenerator.triangleCoordinateGroups;
-        //        foreach (AxialPosition[] triangleGroup in triangleGroups)
-        //        {
-        //            var v0 = vertices24[triangleGroup[0]];
-        //            var v1 = vertices24[triangleGroup[1]];
-        //            var v2 = vertices24[triangleGroup[2]];
-
-        //            var v0AbsHeight = v0.height + slotGrid.TileHeights[position];
-        //            var v1AbsHeight = v1.height + slotGrid.TileHeights[position];
-        //            var v2AbsHeight = v2.height + slotGrid.TileHeights[position];
-
-        //            AxialPosition v0AbsPos6 = triangleGroup[0] + position * 6;
-        //            AxialPosition v1AbsPos6 = triangleGroup[1] + position * 6;
-        //            AxialPosition v2AbsPos6 = triangleGroup[2] + position * 6;
-
-        //            var v0AbsPosCartesian6 = GridUtilities.AxialPositionToVec2(v0AbsPos6);
-        //            var v0AbsPosXYZ = new Vector3((float)v0AbsPosCartesian6.X/6, (float)v0AbsPosCartesian6.Y/6, (float)v0AbsHeight);
-
-        //            var v1AbsPosCartesian6 = GridUtilities.AxialPositionToVec2(v1AbsPos6);
-        //            var v1AbsPosXYZ = new Vector3((float)v1AbsPosCartesian6.X/6, (float)v1AbsPosCartesian6.Y/6, (float)v1AbsHeight);
-
-        //            var v2AbsPosCartesian6 = GridUtilities.AxialPositionToVec2(v2AbsPos6);
-        //            var v2AbsPosXYZ = new Vector3((float)v2AbsPosCartesian6.X/6, (float)v2AbsPosCartesian6.Y/6, (float)v2AbsHeight);
-        //        }
-        //    }
-        //    Debug.Write(Vertices);
-        //}
-
         [Fact]
-        public void Add_Hex_Positions()
+        public void Add_Axial_Positions()
         {
             AxialPosition positionA = new(1, 5);
             AxialPosition positionB = new(2, 3);
@@ -406,7 +54,7 @@ namespace lionturtle_test
         }
 
         [Fact]
-        public void Subtract_Hex_Positions()
+        public void Subtract_Axial_Positions()
         {
             AxialPosition positionA = new(2, 3);
             AxialPosition positionB = new(1, 5);
@@ -417,7 +65,7 @@ namespace lionturtle_test
         }
 
         [Fact]
-        public void Add_Axial_Direction_To_Hex_Position()
+        public void Add_Axial_Direction_To_Axial_Position()
         {
             AxialPosition position = new(5, 4);
             AxialPosition direction = Constants.axialDirections[1];
@@ -441,7 +89,7 @@ namespace lionturtle_test
         }
     }
 
-    public class GridTests
+    public class GridUtilitiesTests
     {
         [Fact]
         public void Get_Vertex_Position_By_Hex()
@@ -451,33 +99,6 @@ namespace lionturtle_test
             AxialPosition vertexPosition = GridUtilities.GetVertexPositionForHexV(hexPosition, vIndex);
             Assert.True(vertexPosition == new AxialPosition(2, -1));
         }
-
-        //[Fact]
-        //public void Find_Existing_Vertex_By_Hex_Position()
-        //{
-        //    HexGrid grid = new();
-        //    AxialPosition hexPosition = new AxialPosition(0, 0);
-        //    AxialPosition newHexPosition = new AxialPosition(1, 0);
-
-        //    grid.ManifestHexAtPosition(hexPosition, 0);
-
-        //    Vertex? existingVertex = grid.FindExistingVertexForHexV(newHexPosition, 2);
-        //    Assert.True(existingVertex != null);
-        //}
-
-        //[Fact]
-        //public void New_Hexes_Use_Existing_Vertices()
-        //{
-        //    HexGrid grid = new();
-
-        //    grid.ManifestHexAtPosition(new AxialPosition(0, 0), 0);
-        //    grid.ManifestHexAtPosition(new AxialPosition(1, 0), 0);
-
-        //    Assert.True(grid.Vertices.Count == 10);
-        //    Assert.True(grid.Hexes.Count == 2);
-        //    Assert.True(grid.Hexes[new AxialPosition(0, 0)].Verts[0] ==
-        //        grid.Hexes[new AxialPosition(1, 0)].Verts[2]);
-        //}
 
         [Fact]
         public void Determine_If_Vertex_Points_Up()
@@ -506,6 +127,49 @@ namespace lionturtle_test
             AxialPosition[] vertexPositions = GridUtilities.GetVertexPositionsFromHexPosiiton(hexPosition);
             Assert.True(vertexPositions[2] == new AxialPosition(5, -7));
             Assert.True(vertexPositions[5] == new AxialPosition(7, -5));
+        }
+
+        [Fact]
+        public void Get_Spiral_Hex_Positions()
+        {
+            AxialPosition[] sizeZeroPositions = GridUtilities.GetSpiralHexPositions(0);
+            Assert.Empty(sizeZeroPositions);
+
+            AxialPosition[] sizeOnePositions = GridUtilities.GetSpiralHexPositions(1);
+            Assert.Single(sizeOnePositions);
+
+            AxialPosition[] sizeTwoPositions = GridUtilities.GetSpiralHexPositions(2);
+            Assert.Equal(7, sizeTwoPositions.Length);
+
+            AxialPosition[] sizeThreePositions = GridUtilities.GetSpiralHexPositions(3);
+            Assert.Equal(19, sizeThreePositions.Length);
+        }
+
+        [Fact]
+        public void Get_Spiral_Vertex_Positions()
+        {
+            List<AxialPosition> sizeZeroPositions = GridUtilities.GetSpiralVertexPositions(0);
+            Assert.Empty(sizeZeroPositions);
+
+            //confusingly, the first 'ring' is a single vertex that is
+            //a hex center, so it is ignored
+            List<AxialPosition> sizeOnePositions = GridUtilities.GetSpiralVertexPositions(1);
+            Assert.Empty(sizeOnePositions);
+
+            //I think it would feel weird if 1 ring got you a complete
+            //hex, but you had to add 2 more rings to get the next hex
+            //So instead, complete hexes land on even numbers
+            List<AxialPosition> sizeTwoPositions = GridUtilities.GetSpiralVertexPositions(2);
+            Assert.Equal(6, sizeTwoPositions.Count);
+
+            List<AxialPosition> sizeThreePositions = GridUtilities.GetSpiralVertexPositions(3);
+            Assert.Equal(12, sizeThreePositions.Count);
+
+            List<AxialPosition> sizeFourPositions = GridUtilities.GetSpiralVertexPositions(4);
+            Assert.Equal(24, sizeFourPositions.Count);
+
+            List<AxialPosition> sizeFivePositions = GridUtilities.GetSpiralVertexPositions(5);
+            Assert.Equal(42, sizeFivePositions.Count);
         }
     }
 }

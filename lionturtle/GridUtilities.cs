@@ -1,11 +1,76 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Numerics;
+using System.Reflection.Metadata;
 using System.Text.RegularExpressions;
 
 namespace lionturtle
 {
     public static class GridUtilities
     {
+        public static List<AxialPosition> GetSpiralVertexPositions(int numRings)
+        {
+            if(numRings < 0) throw new Exception("numRings must be non-negative");
+            if(numRings == 0) return new List<AxialPosition>();
+
+            int index = 0;
+            List<AxialPosition> positions = new();
+
+            AxialPosition turtle = new AxialPosition(0, 0); //starting on hex center
+
+            for (int i = 1; i < numRings; i++)
+            {
+                turtle += Constants.dualDirections[0];
+                for (int j = 0; j < 6; j++)
+                {
+                    for (int k = 0; k < i; k++)
+                    {
+                        if (turtle.Q.Mod(3) != 0){ //ignore hex centers
+                            positions.Add(turtle);
+                            index++;
+                        }
+
+                        turtle += Constants.dualDirections[(j+2)%6];
+                    }
+                }
+            }
+
+            return positions;
+        }
+
+        public static AxialPosition[] GetSpiralHexPositions(int numRings)
+        {
+            if(numRings < 0) throw new Exception("numRings must be non-negative");
+            if(numRings == 0) return new AxialPosition[0];
+
+            int index = 0;
+            AxialPosition[] positions = new AxialPosition[6*GetTriangleNumber(numRings-1)+1];
+
+            AxialPosition turtle = new AxialPosition(0, 0);
+            positions[index] = turtle;
+            index++;
+
+            for (int i = 1; i < numRings; i++)
+            {
+                turtle += Constants.axialDirections[0];
+                for (int j = 0; j < 6; j++)
+                {
+                    for (int k = 0; k < i; k++)
+                    {
+                        positions[index] = turtle;
+                        index++;
+                        turtle += Constants.axialDirections[(j+2)%6];
+                    }
+                }
+            }
+
+            return positions;
+        }
+
+        public static int GetTriangleNumber(int n){
+            return n*(n+1)/2;
+        }
+
         public static bool VertexPointsUp(AxialPosition vertexPosition)
         {
             if (vertexPosition.Q.Mod(3) == 0)
