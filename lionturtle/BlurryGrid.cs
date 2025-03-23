@@ -145,6 +145,81 @@ namespace lionturtle
                         }
                     }
                 }
+
+                if(vGroups[i].Sides != null && vGroups[i].Sides.Length == 2){
+                    //handle sides (for ridges aka saddles)
+                    //kinda just hacking over here rn!
+                    (AxialPosition, AxialPosition)[] sides = vGroups[i].Sides;
+                    
+                    List<BlurryValue> centerVs = new(){ primaryV };
+                    List<BlurryValue> leftVs = new();
+                    List<BlurryValue> rightVs = new();
+
+                    if (BlurryValues.ContainsKey(secondaryVPosition))
+                        centerVs.Add(BlurryValues[secondaryVPosition]);
+
+                    if (BlurryValues.ContainsKey(position + sides[0].Item1))
+                        leftVs.Add(BlurryValues[position + sides[0].Item1]);
+                    if (BlurryValues.ContainsKey(position + sides[0].Item2))
+                        leftVs.Add(BlurryValues[position + sides[0].Item2]);
+
+                    if (BlurryValues.ContainsKey(position + sides[1].Item1))
+                        rightVs.Add(BlurryValues[position + sides[1].Item1]);
+                    if (BlurryValues.ContainsKey(position + sides[1].Item2))
+                        rightVs.Add(BlurryValues[position + sides[1].Item2]);
+                    
+                    double? centerLowestMin = null;
+                    if(centerVs.Count() == 1) centerLowestMin = centerVs[0].Min;
+                    if(centerVs.Count() == 2) centerLowestMin =
+                        BlurryValue.NullOrMin(centerVs[0].Min, centerVs[1].Min);
+
+                    double? centerHighestMax = null;
+                    if(centerVs.Count() == 1) centerHighestMax = centerVs[0].Max;
+                    if(centerVs.Count() == 2) centerHighestMax =
+                        BlurryValue.NullOrMax(centerVs[0].Max, centerVs[1].Max);
+
+                    double? leftHighestMin = leftVs.Aggregate(null, (double? acc, BlurryValue v) => 
+                        (v.Min != null && (acc == null || v.Min > acc))? v.Min : acc
+                    );
+                    double? leftLowestMax = leftVs.Aggregate(null, (double? acc, BlurryValue v) => 
+                        (v.Max != null && (acc == null || v.Max < acc))? v.Max : acc
+                    );
+
+                    double? rightHighestMin = rightVs.Aggregate(null, (double? acc, BlurryValue v) => 
+                        (v.Min != null && (acc == null || v.Min > acc))? v.Min : acc
+                    );
+                    double? rightLowestMax = rightVs.Aggregate(null, (double? acc, BlurryValue v) => 
+                        (v.Max != null && (acc == null || v.Max < acc))? v.Max : acc
+                    );
+
+                    if(leftHighestMin != null && centerHighestMax != null){
+                        if(leftHighestMin > centerHighestMax){
+                            ConstrainAndMaybePropagate(position + sides[1].Item1, null, centerHighestMax);
+                            ConstrainAndMaybePropagate(position + sides[1].Item2, null, centerHighestMax);
+                        }
+                    }
+
+                    if(leftLowestMax != null && centerLowestMin != null){
+                        if(leftLowestMax < centerLowestMin){
+                            ConstrainAndMaybePropagate(position + sides[1].Item1, centerLowestMin, null);
+                            ConstrainAndMaybePropagate(position + sides[1].Item2, centerLowestMin, null);
+                        }
+                    }
+
+                    if(rightHighestMin != null && centerHighestMax != null){
+                        if(rightHighestMin > centerHighestMax){
+                            ConstrainAndMaybePropagate(position + sides[0].Item1, null, centerHighestMax);
+                            ConstrainAndMaybePropagate(position + sides[0].Item2, null, centerHighestMax);
+                        }
+                    }
+
+                    if(rightLowestMax != null && centerLowestMin != null){
+                        if(rightLowestMax < centerLowestMin){
+                            ConstrainAndMaybePropagate(position + sides[0].Item1, centerLowestMin, null);
+                            ConstrainAndMaybePropagate(position + sides[0].Item2, centerLowestMin, null);
+                        }
+                    }
+                }
             }
         }
 

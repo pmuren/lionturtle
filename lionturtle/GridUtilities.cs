@@ -181,6 +181,10 @@ namespace lionturtle
                             new AxialPosition(4, -5),
                             new AxialPosition(1, -5),
                             new AxialPosition(3, -6),
+                        },
+                        sides: new (AxialPosition, AxialPosition)[] {
+                            (new AxialPosition(-2, -2), new AxialPosition(-3, 0)),
+                            (new AxialPosition(3, 0), new AxialPosition(4, -2)),
                         }
                     ),
                     new VertexGroup(
@@ -199,6 +203,10 @@ namespace lionturtle
                             new AxialPosition(-5, 1),
                             new AxialPosition(-5, 4),
                             new AxialPosition(-6, 3),
+                        },
+                        sides: new (AxialPosition, AxialPosition)[] {
+                            (new AxialPosition(-2, 4), new AxialPosition(0, 3)),
+                            (new AxialPosition(0, -3), new AxialPosition(-2, -2)),
                         }
                     ),
                     new VertexGroup(
@@ -219,6 +227,10 @@ namespace lionturtle
                             new AxialPosition(1, 4),
                             new AxialPosition(4, 1),
                             new AxialPosition(3, 3),
+                        },
+                        sides: new (AxialPosition, AxialPosition)[] {
+                            (new AxialPosition(4, -2), new AxialPosition(3, -3)),
+                            (new AxialPosition(-3, 3), new AxialPosition(-2, 4)),
                         }
                     ),
 
@@ -426,6 +438,10 @@ namespace lionturtle
                             new AxialPosition(5, -1),
                             new AxialPosition(5, -4),
                             new AxialPosition(6, -3),
+                        },
+                        sides: new (AxialPosition, AxialPosition)[] {
+                            (new AxialPosition(2, -4), new AxialPosition(0, -3)),
+                            (new AxialPosition(0, 3), new AxialPosition(2, 2)),
                         }
                     ),
                     new VertexGroup(
@@ -446,6 +462,10 @@ namespace lionturtle
                             new AxialPosition(-1, -4),
                             new AxialPosition(-4, -1),
                             new AxialPosition(-3, -3),
+                        },
+                        sides: new (AxialPosition, AxialPosition)[] {
+                            (new AxialPosition(-4, 2), new AxialPosition(-3, 3)),
+                            (new AxialPosition(3, -3), new AxialPosition(2, -4)),
                         }
                     ),
                     new VertexGroup(
@@ -466,6 +486,10 @@ namespace lionturtle
                             new AxialPosition(-4, 5),
                             new AxialPosition(-1, 5),
                             new AxialPosition(-3, 6),
+                        },
+                        sides: new (AxialPosition, AxialPosition)[] {
+                            (new AxialPosition(2, 2), new AxialPosition(3, 0)),
+                            (new AxialPosition(-3, 0), new AxialPosition(-4, 2)),
                         }
                     ),
 
@@ -660,19 +684,16 @@ namespace lionturtle
             AxialPosition secondaryVertex,
             AxialPosition[]? primaryPushedVertices = null,
             AxialPosition[]? secondaryPushedVertices = null,
-            AxialPosition[]? pinchedVertices = null
+            AxialPosition[]? pinchedVertices = null,
+            (AxialPosition, AxialPosition)[]? sides = null
             )
         {
             PrimaryVertex = primaryVertex;
             SecondaryVertex = secondaryVertex;
-            if (pinchedVertices == null) PinchedVertices = Array.Empty<AxialPosition>();
-            else PinchedVertices = pinchedVertices;
-
-            if (primaryPushedVertices == null) PrimaryPushedVertices = Array.Empty<AxialPosition>();
-            else PrimaryPushedVertices = primaryPushedVertices;
-
-            if (secondaryPushedVertices == null) SecondaryPushedVertices = Array.Empty<AxialPosition>();
-            else SecondaryPushedVertices = secondaryPushedVertices;
+            PinchedVertices = pinchedVertices ?? Array.Empty<AxialPosition>();
+            PrimaryPushedVertices = primaryPushedVertices ?? Array.Empty<AxialPosition>();
+            SecondaryPushedVertices = secondaryPushedVertices ?? Array.Empty<AxialPosition>();
+            Sides = sides ?? Array.Empty<(AxialPosition, AxialPosition)>();
         }
 
         public AxialPosition PrimaryVertex { get; }
@@ -680,6 +701,7 @@ namespace lionturtle
         public AxialPosition[] PinchedVertices { get; }
         public AxialPosition[] PrimaryPushedVertices { get; }
         public AxialPosition[] SecondaryPushedVertices { get; }
+        public (AxialPosition, AxialPosition)[]? Sides { get; }
     }
 
     public readonly struct CreaseVertexGroup

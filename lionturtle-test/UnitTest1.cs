@@ -25,7 +25,23 @@ namespace lionturtle_test
         {
             BlurryGrid grid = new();
             PerlinNoise perlin = new PerlinNoise(1337);
-            int size = 5;
+            int size = 3;
+            List<AxialPosition> positions = GridUtilities.GetSpiralVertexPositions(size*2);
+            foreach(AxialPosition position in positions){
+                Vector2 cartesian = GridUtilities.AxialToCartesian(position, 1);
+                double heuristic = Math.Round(perlin.Noise(cartesian.X, cartesian.Y)*5.0);
+                grid.ResolveValueAtPosition(position, heuristic);
+            }
+
+            Debug.Write(grid.GetStringHexes(size));
+        }
+
+        [Fact]
+        public void Medium_Grid_With_Perlin()
+        {
+            BlurryGrid grid = new();
+            PerlinNoise perlin = new PerlinNoise(1337);
+            int size = 10;
             List<AxialPosition> positions = GridUtilities.GetSpiralVertexPositions(size*2);
             foreach(AxialPosition position in positions){
                 Vector2 cartesian = GridUtilities.AxialToCartesian(position, 1);
