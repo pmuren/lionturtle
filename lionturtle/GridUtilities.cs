@@ -137,10 +137,10 @@ namespace lionturtle
             return new Vector2(q, r);
         }
 
-        public static Vector2 AxialToCartesian(Vector2 axial, float grid_scale)
+        public static Vector2 AxialToCartesian(AxialPosition axial, float grid_scale)
         {
-            float x = (float)(Math.Sqrt(3.0) * axial.X + Math.Sqrt(3.0) / 2.0 * axial.Y) / grid_scale;
-            float y = (float)(3.0 / 2.0 * axial.Y) / grid_scale;
+            float x = (float)(Math.Sqrt(3.0) * axial.Q + Math.Sqrt(3.0) / 2.0 * axial.R) / grid_scale;
+            float y = (float)(3.0 / 2.0 * axial.R) / grid_scale;
 
             return new Vector2(x, y);
         }

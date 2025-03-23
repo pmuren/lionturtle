@@ -10,7 +10,7 @@ namespace lionturtle_test
         [Fact]
         public void One_Pair()
         {
-            BlurryGrid grid = new BlurryGrid();
+            BlurryGrid grid = new();
             AxialPosition position0 = new AxialPosition(2, -1);
             grid.FindOrCreateBlurryValue(position0);
             AxialPosition position1 = new AxialPosition(1, -2);
@@ -18,6 +18,22 @@ namespace lionturtle_test
 
             grid.ResolveValueAtPosition(position0, 4);
             grid.ResolveValueAtPosition(position1, 3);
+        }
+
+        [Fact]
+        public void Small_Grid_With_Perlin()
+        {
+            BlurryGrid grid = new();
+            PerlinNoise perlin = new PerlinNoise(1337);
+            int size = 5;
+            List<AxialPosition> positions = GridUtilities.GetSpiralVertexPositions(size*2);
+            foreach(AxialPosition position in positions){
+                Vector2 cartesian = GridUtilities.AxialToCartesian(position, 1);
+                double heuristic = Math.Round(perlin.Noise(cartesian.X, cartesian.Y)*5.0);
+                grid.ResolveValueAtPosition(position, heuristic);
+            }
+
+            Debug.Write(grid.GetStringHexes(size));
         }
     }
 

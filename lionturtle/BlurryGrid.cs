@@ -1,4 +1,5 @@
 using System;
+using System.Reflection.Metadata;
 using lionturtle;
 
 namespace lionturtle
@@ -147,37 +148,30 @@ namespace lionturtle
             }
         }
 
-        public string GetStringHexes()
+        public string GetStringHexes(int numRings)
 		{
             string stringHexes = "hexes = {";
-            // foreach (KeyValuePair<AxialPosition, Hex> pair in Hexes)
-            // {
-            //     AxialPosition position = pair.Key;
-            //     Hex hex = pair.Value;
 
-            //     string stringHex = $"HexPosition({position.Q}, {position.R}): Hex([";
+            AxialPosition[] hexPositions = GridUtilities.GetSpiralHexPositions(numRings);
 
-            //     for (int j = 0; j < hex.Verts.Length; j++)
-            //     {
-            //         if (j < hex.Verts.Length - 1)
-            //             stringHex += $"{hex.Verts[j].height}, ";
-            //         else
-            //             stringHex += $"{hex.Verts[j].height}])";
-            //     }
+            foreach (AxialPosition hexPosition in hexPositions)
+            {
+                string stringHex = $"HexPosition({hexPosition.Q}, {hexPosition.R}): Hex([";
 
-            //     stringHex += $"], [";
-            //     for (int j = 0; j < hex.Verts.Length; j++)
-            //     {
-            //         if (j < hex.Verts.Length - 1)
-            //             stringHex += $"{hex.VertexTypes[j]}, ";
-            //         else
-            //             stringHex += $"{hex.VertexTypes[j]}])";
-            //     }
+                for (int direction = 0; direction < 6; direction++)
+                {
+                    AxialPosition vertexPosition = hexPosition*3+Constants.dualDirections[direction];
+                    double resolvedValue = ResolvedValues[vertexPosition];
+                    if (direction < 5)
+                        stringHex += $"{resolvedValue}, ";
+                    else
+                        stringHex += $"{resolvedValue}])";
+                }
 
-            //     stringHexes += stringHex;
-            //     stringHexes += ", ";
-            // }
-            // stringHexes += "}";
+                stringHexes += stringHex;
+                stringHexes += ", ";
+            }
+            stringHexes += "}";
 
 			return stringHexes;
         }
