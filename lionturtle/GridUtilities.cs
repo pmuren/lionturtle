@@ -186,6 +186,12 @@ namespace lionturtle
                         sides: new AxialPositionPair[] {
                             new AxialPositionPair(new AxialPosition(-2, -2), new AxialPosition(-3, 0)),
                             new AxialPositionPair(new AxialPosition(3, 0), new AxialPosition(4, -2)),
+                        },
+                        ribbons: new AxialPositionPair[] {
+                            new AxialPositionPair(new AxialPosition(-5, -2), new AxialPosition(-6, 0)),
+                            new AxialPositionPair(new AxialPosition(-2, -2), new AxialPosition(-3, 0)),
+                            new AxialPositionPair(new AxialPosition(4, -2), new AxialPosition(3, 0)),
+                            new AxialPositionPair(new AxialPosition(7, -2), new AxialPosition(6, 0)),
                         }
                     ),
                     new VertexGroup(
@@ -208,6 +214,12 @@ namespace lionturtle
                         sides: new AxialPositionPair[] {
                             new AxialPositionPair(new AxialPosition(-2, 4), new AxialPosition(0, 3)),
                             new AxialPositionPair(new AxialPosition(0, -3), new AxialPosition(-2, -2)),
+                        },
+                        ribbons: new AxialPositionPair[] {
+                            new AxialPositionPair(new AxialPosition(-2, 7), new AxialPosition(0, 6)),
+                            new AxialPositionPair(new AxialPosition(-2, 4), new AxialPosition(0, 3)),
+                            new AxialPositionPair(new AxialPosition(-2, -2), new AxialPosition(0, -3)),
+                            new AxialPositionPair(new AxialPosition(-2, -5), new AxialPosition(0, -6)),
                         }
                     ),
                     new VertexGroup(
@@ -232,6 +244,12 @@ namespace lionturtle
                         sides: new AxialPositionPair[] {
                             new AxialPositionPair(new AxialPosition(4, -2), new AxialPosition(3, -3)),
                             new AxialPositionPair(new AxialPosition(-3, 3), new AxialPosition(-2, 4)),
+                        },
+                        ribbons: new AxialPositionPair[] {
+                            new AxialPositionPair(new AxialPosition(7, -5), new AxialPosition(6, -6)),
+                            new AxialPositionPair(new AxialPosition(4, -2), new AxialPosition(3, -3)),
+                            new AxialPositionPair(new AxialPosition(-2, 4), new AxialPosition(-3, 3)),
+                            new AxialPositionPair(new AxialPosition(-5, 7), new AxialPosition(-6, 6)),
                         }
                     ),
 
@@ -443,6 +461,12 @@ namespace lionturtle
                         sides: new AxialPositionPair[] {
                             new AxialPositionPair(new AxialPosition(2, -4), new AxialPosition(0, -3)),
                             new AxialPositionPair(new AxialPosition(0, 3), new AxialPosition(2, 2)),
+                        },
+                        ribbons: new AxialPositionPair[] {
+                            new AxialPositionPair(new AxialPosition(2, -7), new AxialPosition(0, -6)),
+                            new AxialPositionPair(new AxialPosition(2, -4), new AxialPosition(0, -3)),
+                            new AxialPositionPair(new AxialPosition(2, 2), new AxialPosition(0, 3)),
+                            new AxialPositionPair(new AxialPosition(2, 5), new AxialPosition(0, 6)),
                         }
                     ),
                     new VertexGroup(
@@ -467,6 +491,12 @@ namespace lionturtle
                         sides: new AxialPositionPair[] {
                             new AxialPositionPair(new AxialPosition(-4, 2), new AxialPosition(-3, 3)),
                             new AxialPositionPair(new AxialPosition(3, -3), new AxialPosition(2, -4)),
+                        },
+                        ribbons: new AxialPositionPair[] {
+                            new AxialPositionPair(new AxialPosition(-7, 5), new AxialPosition(-6, 6)),
+                            new AxialPositionPair(new AxialPosition(-4, 2), new AxialPosition(-3, 3)),
+                            new AxialPositionPair(new AxialPosition(2, -4), new AxialPosition(3, -3)),
+                            new AxialPositionPair(new AxialPosition(5, -7), new AxialPosition(6, -6)),
                         }
                     ),
                     new VertexGroup(
@@ -491,6 +521,12 @@ namespace lionturtle
                         sides: new AxialPositionPair[] {
                             new AxialPositionPair(new AxialPosition(2, 2), new AxialPosition(3, 0)),
                             new AxialPositionPair(new AxialPosition(-3, 0), new AxialPosition(-4, 2)),
+                        },
+                        ribbons: new AxialPositionPair[] {
+                            new AxialPositionPair(new AxialPosition(5, 2), new AxialPosition(6, 0)),
+                            new AxialPositionPair(new AxialPosition(2, 2), new AxialPosition(3, 0)),
+                            new AxialPositionPair(new AxialPosition(-4, 2), new AxialPosition(-3, 0)),
+                            new AxialPositionPair(new AxialPosition(-7, 2), new AxialPosition(-6, 0)),
                         }
                     ),
 
@@ -686,7 +722,8 @@ namespace lionturtle
             AxialPosition[]? primaryPushedVertices = null,
             AxialPosition[]? secondaryPushedVertices = null,
             AxialPosition[]? pinchedVertices = null,
-            AxialPositionPair[]? sides = null
+            AxialPositionPair[]? sides = null,
+            AxialPositionPair[]? ribbons = null
             )
         {
             PrimaryVertex = primaryVertex;
@@ -694,7 +731,8 @@ namespace lionturtle
             PinchedVertices = pinchedVertices ?? Array.Empty<AxialPosition>();
             PrimaryPushedVertices = primaryPushedVertices ?? Array.Empty<AxialPosition>();
             SecondaryPushedVertices = secondaryPushedVertices ?? Array.Empty<AxialPosition>();
-            Sides = sides ?? Array.Empty<AxialPositionPair>();
+            Sides = sides;
+            Ribbons = ribbons;
         }
 
         public AxialPosition PrimaryVertex { get; }
@@ -703,6 +741,7 @@ namespace lionturtle
         public AxialPosition[] PrimaryPushedVertices { get; }
         public AxialPosition[] SecondaryPushedVertices { get; }
         public AxialPositionPair[]? Sides { get; }
+        public AxialPositionPair[]? Ribbons { get; }
     }
 
     public readonly struct CreaseVertexGroup
