@@ -149,74 +149,71 @@ namespace lionturtle
                 if(vGroups[i].Sides != null && vGroups[i].Sides.Length == 2){
                     //handle sides (for ridges aka saddles)
                     //kinda just hacking over here rn!
-                    (AxialPosition, AxialPosition)[] sides = vGroups[i].Sides;
-                    
-                    List<BlurryValue> centerVs = new(){ primaryV };
-                    List<BlurryValue> leftVs = new();
-                    List<BlurryValue> rightVs = new();
 
-                    if (BlurryValues.ContainsKey(secondaryVPosition))
-                        centerVs.Add(BlurryValues[secondaryVPosition]);
+                    //For all but the primary vertex,
+                    //creates a temporary (null, null) if not present in grid
 
-                    if (BlurryValues.ContainsKey(position + sides[0].Item1))
-                        leftVs.Add(BlurryValues[position + sides[0].Item1]);
-                    if (BlurryValues.ContainsKey(position + sides[0].Item2))
-                        leftVs.Add(BlurryValues[position + sides[0].Item2]);
+                    AxialPositionPair[] sides = vGroups[i].Sides.Select(
+                        relativePair => new AxialPositionPair(
+                            relativePair.a + position, relativePair.b + position
+                        )
+                    ).ToArray();
 
-                    if (BlurryValues.ContainsKey(position + sides[1].Item1))
-                        rightVs.Add(BlurryValues[position + sides[1].Item1]);
-                    if (BlurryValues.ContainsKey(position + sides[1].Item2))
-                        rightVs.Add(BlurryValues[position + sides[1].Item2]);
-                    
-                    double? centerLowestMin = null;
-                    if(centerVs.Count() == 1) centerLowestMin = centerVs[0].Min;
-                    if(centerVs.Count() == 2) centerLowestMin =
-                        BlurryValue.NullOrMin(centerVs[0].Min, centerVs[1].Min);
-
-                    double? centerHighestMax = null;
-                    if(centerVs.Count() == 1) centerHighestMax = centerVs[0].Max;
-                    if(centerVs.Count() == 2) centerHighestMax =
-                        BlurryValue.NullOrMax(centerVs[0].Max, centerVs[1].Max);
-
-                    double? leftHighestMin = leftVs.Aggregate(null, (double? acc, BlurryValue v) => 
-                        (v.Min != null && (acc == null || v.Min > acc))? v.Min : acc
+                    BlurryValuePair centerPair = new BlurryValuePair(
+                        primaryV,
+                        BlurryValues.ContainsKey(secondaryVPosition)?
+                            BlurryValues[secondaryVPosition]
+                            : new BlurryValue()
                     );
-                    double? leftLowestMax = leftVs.Aggregate(null, (double? acc, BlurryValue v) => 
-                        (v.Max != null && (acc == null || v.Max < acc))? v.Max : acc
+                    BlurryValuePair leftPair = new BlurryValuePair(
+                        BlurryValues.ContainsKey(sides[0].a)?
+                            BlurryValues[sides[0].a]
+                            : new BlurryValue(),
+                        BlurryValues.ContainsKey(sides[0].b)?
+                            BlurryValues[sides[0].b]
+                            : new BlurryValue()
+                    );
+                    BlurryValuePair rightPair = new BlurryValuePair(
+                        BlurryValues.ContainsKey(sides[1].a)?
+                            BlurryValues[sides[1].a]
+                            : new BlurryValue(),
+                        BlurryValues.ContainsKey(sides[1].b)?
+                            BlurryValues[sides[1].b]
+                            : new BlurryValue()
                     );
 
-                    double? rightHighestMin = rightVs.Aggregate(null, (double? acc, BlurryValue v) => 
-                        (v.Min != null && (acc == null || v.Min > acc))? v.Min : acc
-                    );
-                    double? rightLowestMax = rightVs.Aggregate(null, (double? acc, BlurryValue v) => 
-                        (v.Max != null && (acc == null || v.Max < acc))? v.Max : acc
-                    );
+                    double? centerHighMax = centerPair.HighMax();
+                    double? centerLowMin = centerPair.LowMin();
+                    double? leftHighMin = leftPair.HighMin();
+                    double? leftLowMax = leftPair.LowMax();
+                    double? rightHighMin = rightPair.HighMin();
+                    double? rightLowMax = rightPair.LowMax();
 
-                    if(leftHighestMin != null && centerHighestMax != null){
-                        if(leftHighestMin > centerHighestMax){
-                            ConstrainAndMaybePropagate(position + sides[1].Item1, null, centerHighestMax);
-                            ConstrainAndMaybePropagate(position + sides[1].Item2, null, centerHighestMax);
+                    if(leftHighMin != null && centerHighMax != null){
+                        if(leftHighMin > centerHighMax){
+                            ConstrainAndMaybePropagate(sides[1].a, null, centerHighMax);
+                            ConstrainAndMaybePropagate(sides[1].b, null, centerHighMax);
                         }
                     }
 
-                    if(leftLowestMax != null && centerLowestMin != null){
-                        if(leftLowestMax < centerLowestMin){
-                            ConstrainAndMaybePropagate(position + sides[1].Item1, centerLowestMin, null);
-                            ConstrainAndMaybePropagate(position + sides[1].Item2, centerLowestMin, null);
+                    if(leftLowMax != null && centerLowMin != null){
+                        if(leftLowMax < centerLowMin){
+                            ConstrainAndMaybePropagate(sides[1].a, centerLowMin, null);
+                            ConstrainAndMaybePropagate(sides[1].b, centerLowMin, null);
                         }
                     }
 
-                    if(rightHighestMin != null && centerHighestMax != null){
-                        if(rightHighestMin > centerHighestMax){
-                            ConstrainAndMaybePropagate(position + sides[0].Item1, null, centerHighestMax);
-                            ConstrainAndMaybePropagate(position + sides[0].Item2, null, centerHighestMax);
+                    if(rightHighMin != null && centerHighMax != null){
+                        if(rightHighMin > centerHighMax){
+                            ConstrainAndMaybePropagate(sides[0].a, null, centerHighMax);
+                            ConstrainAndMaybePropagate(sides[0].b, null, centerHighMax);
                         }
                     }
 
-                    if(rightLowestMax != null && centerLowestMin != null){
-                        if(rightLowestMax < centerLowestMin){
-                            ConstrainAndMaybePropagate(position + sides[0].Item1, centerLowestMin, null);
-                            ConstrainAndMaybePropagate(position + sides[0].Item2, centerLowestMin, null);
+                    if(rightLowMax != null && centerLowMin != null){
+                        if(rightLowMax < centerLowMin){
+                            ConstrainAndMaybePropagate(sides[0].a, centerLowMin, null);
+                            ConstrainAndMaybePropagate(sides[0].b, centerLowMin, null);
                         }
                     }
                 }
@@ -274,6 +271,28 @@ namespace lionturtle
             stringBlurryValues += "};";
 
             return stringBlurryValues;
+        }
+    }
+
+    public record BlurryValuePair (BlurryValue A, BlurryValue B){
+        public double? LowMin(){
+            return BlurryValue.NullOrMin(A.Min, B.Min);
+        }
+
+        public double? HighMax(){
+            return BlurryValue.NullOrMax(A.Max, B.Max);
+        }
+
+        public double? HighMin(){
+            if(A.Min == null) return B.Min;
+            if(B.Min == null) return A.Min;
+            return Math.Max(A.Min.Value, B.Min.Value);
+        }
+
+        public double? LowMax(){
+            if(A.Max == null) return B.Max;
+            if(B.Max == null) return A.Max;
+            return Math.Min(A.Max.Value, B.Max.Value);
         }
     }
 }
