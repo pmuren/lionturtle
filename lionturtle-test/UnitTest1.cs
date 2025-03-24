@@ -34,22 +34,22 @@ namespace lionturtle_test
                 double heuristic = Math.Round(perlin.Noise(cartesian.X, cartesian.Y)*5.0);
                 grid.ResolveValueAtPosition(position, heuristic);
             }
-
-            Debug.WriteLine("Resolved: " + grid.ResolvedValues.Count() + "/" + positions.Count());
-            Debug.WriteLine("Blurry: " + grid.BlurryValues.Count());
         }
 
         [Fact]
         public void Medium_Grid_With_Perlin()
         {
             BlurryGrid grid = new();
-            PerlinNoise perlin = new PerlinNoise(1356);
+            PerlinNoise perlin = new PerlinNoise(1337);
             int size = 15;
             List<AxialPosition> positions = GridUtilities.GetSpiralVertexPositions(size*2);
             try{
                 foreach(AxialPosition position in positions){
                     Vector2 cartesian = GridUtilities.AxialToCartesian(position, 1);
-                    double heuristic = Math.Round(perlin.Noise(cartesian.X, cartesian.Y)*5.0);
+                    double heuristic =
+                        Math.Round(perlin.Noise(cartesian.X/64.0, cartesian.Y/64.0)*8.0)
+                        + Math.Round(perlin.Noise(cartesian.X/96.0, cartesian.Y/96.0)*4.0)
+                        + Math.Round(perlin.Noise(cartesian.X/32.0, cartesian.Y/32.0)*2.0);
                     grid.ResolveValueAtPosition(position, heuristic);
                 }
 
@@ -59,40 +59,6 @@ namespace lionturtle_test
                 Debug.WriteLine("Resolved: " + grid.ResolvedValues.Count() + "/" + positions.Count());
                 Debug.WriteLine("Blurry: " + grid.BlurryValues.Count());
                 Debug.WriteLine(grid.GetStringHexes(size));
-            }
-        }
-
-        [Fact]
-        public void P_Hacking()
-        {
-            for(int i = 0; i < 1; i++){
-                BlurryGrid grid = new();
-                PerlinNoise perlin = new PerlinNoise(i);
-                int size = 16;
-                List<AxialPosition> positions = GridUtilities.GetSpiralVertexPositions(size*2);
-                try{
-                    foreach(AxialPosition position in positions){
-                        Vector2 cartesian = GridUtilities.AxialToCartesian(position, 1);
-                        double heuristic = Math.Round(
-                            // perlin.Noise(cartesian.X/32.0, cartesian.Y/32.0)*16.0
-                            // + perlin.Noise(cartesian.X/20.0, cartesian.Y/20.0)*5.0
-                            + perlin.Noise(cartesian.X/24.0, cartesian.Y/24.0)*5.0
-                            // + perlin.Noise(cartesian.X/8.0, cartesian.Y/8.0)*1
-                            // + perlin.Noise(cartesian.X/10.0, cartesian.Y/10.0)*1.0
-                            // + perlin.Noise(cartesian.X/5.0, cartesian.Y/5.0)*0.5
-                        );
-                        grid.ResolveValueAtPosition(position, heuristic);
-                    }
-
-                    Debug.Write(grid.GetStringHexes(size));
-                    break;
-                }
-                catch{
-                    continue;
-                    Debug.WriteLine("Resolved: " + grid.ResolvedValues.Count() + "/" + positions.Count());
-                    Debug.WriteLine("Blurry: " + grid.BlurryValues.Count());
-                    Debug.WriteLine(grid.GetStringHexes(size));
-                }
             }
         }
     }
@@ -246,16 +212,6 @@ namespace lionturtle_test
 
             List<AxialPosition> sizeFivePositions = GridUtilities.GetSpiralVertexPositions(5);
             Assert.Equal(42, sizeFivePositions.Count);
-        }
-
-        [Fact]
-        public void Create_And_Read_An_AxialPositionPair()
-        {
-            AxialPositionPair pair = new AxialPositionPair(
-                new AxialPosition(2, -1),
-                new AxialPosition(-5, 7)
-            );
-            Assert.Equal(new AxialPosition(2, -1), pair.a);
         }
     }
 }

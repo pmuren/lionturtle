@@ -25,6 +25,10 @@ namespace lionturtle
 			return Min == other.Min && Max == other.Max;
 		}
 
+		public bool DifferentFrom(BlurryValue other){
+			return !SameAs(other);
+		}
+
 		public void Constrain(double? newMin, double? newMax)
 		{
 			if ( (newMin != null && newMax != null && newMin > newMax)
