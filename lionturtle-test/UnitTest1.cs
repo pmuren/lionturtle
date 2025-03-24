@@ -49,14 +49,15 @@ namespace lionturtle_test
             try{
                 foreach(AxialPosition position in positions){
                     Vector2 cartesian = GridUtilities.AxialToCartesian(position, 1);
-                    double heuristic = Math.Round(perlin.Noise(cartesian.X, cartesian.Y)*5.0);
+                    double heuristic = Math.Round(perlin.Noise(cartesian.X, cartesian.Y)*3.0);
                     grid.ResolveValueAtPosition(position, heuristic);
                 }
 
                 Debug.Write(grid.GetStringHexes(size));
             }
             catch{
-                Debug.WriteLine(positions.Count() + "/" + grid.BlurryValues.Count());
+                Debug.WriteLine("Resolved: " + grid.ResolvedValues.Count() + "/" + positions.Count());
+                Debug.WriteLine("Blurry: " + grid.BlurryValues.Count());
                 Debug.WriteLine(grid.GetStringHexes(size));
             }
         }
